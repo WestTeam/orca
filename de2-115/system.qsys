@@ -21,7 +21,7 @@
    {
       datum _sortIndex
       {
-         value = "10";
+         value = "4";
          type = "int";
       }
    }
@@ -34,7 +34,7 @@
       }
       datum baseAddress
       {
-         value = "16777328";
+         value = "1024";
          type = "String";
       }
    }
@@ -93,28 +93,7 @@
          type = "String";
       }
    }
-   element pio_0
-   {
-      datum _sortIndex
-      {
-         value = "4";
-         type = "int";
-      }
-   }
-   element pio_0.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "16777248";
-         type = "String";
-      }
-   }
-   element pio_1
+   element pio_n_0
    {
       datum _sortIndex
       {
@@ -122,7 +101,7 @@
          type = "int";
       }
    }
-   element pio_1.s1
+   element pio_n_0.avl_mm
    {
       datum _lockedAddress
       {
@@ -131,91 +110,23 @@
       }
       datum baseAddress
       {
-         value = "16777232";
+         value = "0";
          type = "String";
       }
    }
-   element pio_2
+   element system
    {
-      datum _sortIndex
+      datum _originalDeviceFamily
       {
-         value = "6";
-         type = "int";
-      }
-   }
-   element pio_2.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "16777264";
+         value = "Cyclone IV E";
          type = "String";
       }
    }
-   element pio_3
+   element system
    {
-      datum _sortIndex
+      datum _originalDeviceFamily
       {
-         value = "7";
-         type = "int";
-      }
-   }
-   element pio_3.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "16777280";
-         type = "String";
-      }
-   }
-   element pio_4
-   {
-      datum _sortIndex
-      {
-         value = "8";
-         type = "int";
-      }
-   }
-   element pio_4.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "16777296";
-         type = "String";
-      }
-   }
-   element pio_5
-   {
-      datum _sortIndex
-      {
-         value = "9";
-         type = "int";
-      }
-   }
-   element pio_5.s1
-   {
-      datum _lockedAddress
-      {
-         value = "1";
-         type = "boolean";
-      }
-      datum baseAddress
-      {
-         value = "16777312";
+         value = "Cyclone V";
          type = "String";
       }
    }
@@ -303,7 +214,7 @@
    {
       datum _originalDeviceFamily
       {
-         value = "Cyclone IV E";
+         value = "Cyclone V";
          type = "String";
       }
    }
@@ -370,36 +281,7 @@
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
  <interface name="from_host" internal="vectorblox_orca_0.from_host" />
- <interface
-   name="pio_0"
-   internal="pio_0.external_connection"
-   type="conduit"
-   dir="end" />
- <interface
-   name="pio_1"
-   internal="pio_1.external_connection"
-   type="conduit"
-   dir="end" />
- <interface
-   name="pio_2"
-   internal="pio_2.external_connection"
-   type="conduit"
-   dir="end" />
- <interface
-   name="pio_3"
-   internal="pio_3.external_connection"
-   type="conduit"
-   dir="end" />
- <interface
-   name="pio_4"
-   internal="pio_4.external_connection"
-   type="conduit"
-   dir="end" />
- <interface
-   name="pio_5"
-   internal="pio_5.external_connection"
-   type="conduit"
-   dir="end" />
+ <interface name="pio" internal="pio_n_0.data" type="conduit" dir="end" />
  <interface name="program_counter" internal="vectorblox_orca_0.program_counter" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <interface name="to_host" internal="vectorblox_orca_0.to_host" />
@@ -442,7 +324,7 @@
   <parameter name="PIPELINE_COMMAND" value="0" />
   <parameter name="PIPELINE_RESPONSE" value="0" />
   <parameter name="SYMBOL_WIDTH" value="8" />
-  <parameter name="SYSINFO_ADDR_WIDTH" value="7" />
+  <parameter name="SYSINFO_ADDR_WIDTH" value="11" />
   <parameter name="USE_AUTO_ADDRESS_WIDTH" value="1" />
   <parameter name="USE_RESPONSE" value="0" />
  </module>
@@ -452,7 +334,7 @@
    version="16.1"
    enabled="1">
   <parameter name="allowInSystemMemoryContentEditor" value="false" />
-  <parameter name="autoInitializationFileName">system_onchip_memory2_0</parameter>
+  <parameter name="autoInitializationFileName">$${FILENAME}_onchip_memory2_0</parameter>
   <parameter name="blockType" value="AUTO" />
   <parameter name="copyInitFile" value="false" />
   <parameter name="dataWidth" value="32" />
@@ -478,89 +360,8 @@
   <parameter name="useShallowMemBlocks" value="false" />
   <parameter name="writable" value="true" />
  </module>
- <module name="pio_0" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
- <module name="pio_1" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
- <module name="pio_2" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
- <module name="pio_3" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
- <module name="pio_4" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
- </module>
- <module name="pio_5" kind="altera_avalon_pio" version="16.1" enabled="1">
-  <parameter name="bitClearingEdgeCapReg" value="false" />
-  <parameter name="bitModifyingOutReg" value="false" />
-  <parameter name="captureEdge" value="false" />
-  <parameter name="clockRate" value="50000000" />
-  <parameter name="direction" value="InOut" />
-  <parameter name="edgeType" value="RISING" />
-  <parameter name="generateIRQ" value="false" />
-  <parameter name="irqType" value="LEVEL" />
-  <parameter name="resetValue" value="0" />
-  <parameter name="simDoTestBenchWiring" value="false" />
-  <parameter name="simDrivenValue" value="0" />
-  <parameter name="width" value="32" />
+ <module name="pio_n_0" kind="pio_n" version="1.0" enabled="1">
+  <parameter name="RegCnt" value="16" />
  </module>
  <module
    name="vectorblox_orca_0"
@@ -615,47 +416,21 @@
    start="mm_bridge_0.m0"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0070" />
+  <parameter name="baseAddress" value="0x0400" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_3.s1">
+ <connection
+   kind="avalon"
+   version="16.1"
+   start="mm_bridge_0.m0"
+   end="pio_n_0.avl_mm">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0040" />
+  <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_2.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0030" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_1.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0010" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_0.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0020" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_4.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0050" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="pio_5.s1">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x0060" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_0.clk" />
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_1.clk" />
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_2.clk" />
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_3.clk" />
  <connection kind="clock" version="16.1" start="clk_0.clk" end="jtag_uart_0.clk" />
  <connection kind="clock" version="16.1" start="clk_0.clk" end="mm_bridge_0.clk" />
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_4.clk" />
- <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_5.clk" />
+ <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_n_0.clk" />
  <connection
    kind="clock"
    version="16.1"
@@ -671,10 +446,6 @@
    version="16.1"
    start="clk_0.clk"
    end="vectorblox_orca_0.clock" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_0.reset" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_1.reset" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_2.reset" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_3.reset" />
  <connection
    kind="reset"
    version="16.1"
@@ -690,8 +461,11 @@
    version="16.1"
    start="clk_0.clk_reset"
    end="mm_bridge_0.reset" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_4.reset" />
- <connection kind="reset" version="16.1" start="clk_0.clk_reset" end="pio_5.reset" />
+ <connection
+   kind="reset"
+   version="16.1"
+   start="clk_0.clk_reset"
+   end="pio_n_0.reset" />
  <connection
    kind="reset"
    version="16.1"

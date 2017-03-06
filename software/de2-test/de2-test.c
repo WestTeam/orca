@@ -3,11 +3,11 @@
  #include <stdint.h>
  #include <limits.h>
 
-volatile int* pio_0 = (volatile int*)(0x01000020);
-volatile int* pio_1 = (volatile int*)(0x01000010);
-volatile int* pio_2 = (volatile int*)(0x01000030);
-volatile int* pio_3 = (volatile int*)(0x01000040);
-volatile int* uart = (volatile int*)(0x01000070);
+volatile int* pio_0 = (volatile int*)(0x01000000);
+//volatile int* pio_1 = (volatile int*)(0x01000010);
+//volatile int* pio_2 = (volatile int*)(0x01000030);
+//volatile int* pio_3 = (volatile int*)(0x01000040);
+volatile int* uart = (volatile int*)(0x01000400);
 
 
 inline unsigned get_time()
@@ -27,8 +27,8 @@ inline void delay(int cycles)
 inline void jtaguart_putc(char c)
 {
 
-	//while((uart[1]&0xffff0000) == 0){
-	//}//uart fifo full
+	while((uart[1]&0xffff0000) == 0){
+	}//uart fifo full
 	uart[0]=c;
 
 }
@@ -227,18 +227,222 @@ void print_int(int i,uint8_t ret)
     jtaguart_puts(buf);
 }
 
-void print_float(float f)
+void print_float(float f,uint8_t ret)
 {
     int a = (int)f;
+    int b = (int)(f*1000)-a*1000;
+
+    if (a == 0 && b < 0)
+    {
+        jtaguart_putc('-');
+    }
+    if (b < 0)
+        b = -1*b;
+
     print_int(a,0);
     jtaguart_putc('.');
-    int b = (int)(f*1000)-a*1000;
     print_int(b/100%10,0);
     print_int(b/10%10,0);
-    print_int(b%10,1);
+    print_int(b%10,ret);
 
     
 }
+
+
+#define M_PI           3.14159265358979323846
+
+typedef union
+{
+  float value;
+  uint32_t word;
+} ieee_float_shape_type;
+
+/* Get a 32 bit int from a float.  */
+#ifndef GET_FLOAT_WORD
+# define GET_FLOAT_WORD(i,d)					\
+do {								\
+  ieee_float_shape_type gf_u;					\
+  gf_u.value = (d);						\
+  (i) = gf_u.word;						\
+} while (0)
+#endif
+
+/* Set a float from a 32 bit int.  */
+#ifndef SET_FLOAT_WORD
+# define SET_FLOAT_WORD(d,i)					\
+do {								\
+  ieee_float_shape_type sf_u;					\
+  sf_u.word = (i);						\
+  (d) = sf_u.value;						\
+} while (0)
+#endif
+
+static const float
+one =  1.0000000000e+00, /* 0x3f800000 */
+C1  =  4.1666667908e-02, /* 0x3d2aaaab */
+C2  = -1.3888889225e-03, /* 0xbab60b61 */
+C3  =  2.4801587642e-05, /* 0x37d00d01 */
+C4  = -2.7557314297e-07, /* 0xb493f27c */
+C5  =  2.0875723372e-09, /* 0x310f74f6 */
+C6  = -1.1359647598e-11; /* 0xad47d74e */
+
+float __kernel_cosf(float x, float y)
+{
+	float a,hz,z,r,qx;
+	int32_t ix;
+	GET_FLOAT_WORD(ix,x);
+	ix &= 0x7fffffff;			/* ix = |x|'s high word*/
+	if(ix<0x32000000) {			/* if x < 2**27 */
+	    if(((int)x)==0) return one;		/* generate inexact */
+	}
+	z  = x*x;
+	r  = z*(C1+z*(C2+z*(C3+z*(C4+z*(C5+z*C6)))));
+	if(ix < 0x3e99999a) 			/* if |x| < 0.3 */
+	    return one - ((float)0.5*z - (z*r - x*y));
+	else {
+	    if(ix > 0x3f480000) {		/* x > 0.78125 */
+		qx = (float)0.28125;
+	    } else {
+	        SET_FLOAT_WORD(qx,ix-0x01000000);	/* x/4 */
+	    }
+	    hz = (float)0.5*z-qx;
+	    a  = one-qx;
+	    return a - (hz - (z*r-x*y));
+	}
+}
+
+
+static const float
+half =  5.0000000000e-01,/* 0x3f000000 */
+S1  = -1.6666667163e-01, /* 0xbe2aaaab */
+S2  =  8.3333337680e-03, /* 0x3c088889 */
+S3  = -1.9841270114e-04, /* 0xb9500d01 */
+S4  =  2.7557314297e-06, /* 0x3638ef1b */
+S5  = -2.5050759689e-08, /* 0xb2d72f34 */
+S6  =  1.5896910177e-10; /* 0x2f2ec9d3 */
+
+
+
+float __kernel_sinf(float x, float y, int iy)
+{
+	float z,r,v;
+	int32_t ix;
+	GET_FLOAT_WORD(ix,x);
+	ix &= 0x7fffffff;			/* high word of x */
+	if(ix<0x32000000)			/* |x| < 2**-27 */
+	  {
+	    //math_check_force_underflow (x);
+	    if ((int) x == 0)
+	      return x;		/* generate inexact */
+	  }
+	z	=  x*x;
+	v	=  z*x;
+	r	=  S2+z*(S3+z*(S4+z*(S5+z*S6)));
+	if(iy==0) return x+v*(S1+z*r);
+	else      return x-((z*(half*y-v*r)-y)-v*S1);
+}
+
+
+float __sinf(float x)
+{
+	float y[2],z=0.0;
+	int32_t n, ix;
+
+	GET_FLOAT_WORD(ix,x);
+
+    //print_int(ix,1);
+
+    /* |x| ~< pi/4 */
+	ix &= 0x7fffffff;
+	if(ix <= 0x3f490fd8) return __kernel_sinf(x,z,0);
+
+    /* sin(Inf or NaN) is NaN */
+	else if (ix>=0x7f800000) {
+	  //if (ix == 0x7f800000)
+	    //__set_errno (EDOM);
+	  return x-x;
+	}
+
+    /* argument reduction needed */
+	else {
+        //PI/4   = 1061752795
+        //PI/2   = 1070141403
+        //3*PI/4 = 1075235812
+        //PI     = 1078530011
+        if (ix < 1070141403)
+        {
+            return __kernel_cosf(M_PI/2-x,0.0);
+        } 
+        else if (ix < 1075235812)
+        {
+            return __kernel_cosf(x-M_PI/2,0.0);
+        }
+        else
+        {
+            return __kernel_sinf(M_PI-x,z,0);
+        }       
+        /*
+	    n = __ieee754_rem_pio2f(x,y);
+	    switch(n&3) {
+		case 0: return  __kernel_sinf(y[0],y[1],1);
+		case 1: return  __kernel_cosf(y[0],y[1]);
+		case 2: return -__kernel_sinf(y[0],y[1],1);
+		default:
+			return -__kernel_cosf(y[0],y[1]); 
+	    } */
+	}
+}
+
+float __cosf(float x)
+{
+	float y[2],z=0.0;
+	int32_t n,ix;
+
+	GET_FLOAT_WORD(ix,x);
+
+    /* |x| ~< pi/4 */
+	ix &= 0x7fffffff;
+	if(ix <= 0x3f490fd8) return __kernel_cosf(x,z);
+
+    /* cos(Inf or NaN) is NaN */
+	else if (ix>=0x7f800000) {
+	  //if (ix == 0x7f800000)
+	    //__set_errno (EDOM);
+	  return x-x;
+	}
+
+    /* argument reduction needed */
+	else {
+        //PI/4   = 1061752795
+        //PI/2   = 1070141403
+        //3*PI/4 = 1075235812
+        //PI     = 1078530011
+        if (ix < 1070141403)
+        {
+            return __kernel_sinf(M_PI/2-x,0.0,0);
+        } 
+        else if (ix < 1075235812)
+        {
+            return __kernel_sinf(x-M_PI/2,0.0,0);
+        }
+        else
+        {
+            return __kernel_cosf(M_PI-x,0.0);
+        }       
+
+
+        /*
+	    n = 0;//__ieee754_rem_pio2f(x,y);
+	    switch(n&3) {
+		case 0: return  __kernel_cosf(y[0],y[1]);
+		case 1: return -__kernel_sinf(y[0],y[1],1);
+		case 2: return -__kernel_cosf(y[0],y[1]);
+		default:
+		        return  __kernel_sinf(y[0],y[1],1);
+	    } */
+	}
+}
+
 
 
 int main()
@@ -288,7 +492,130 @@ int main()
 
     print_int(vi_offset,1);
 
-	for(;;) {
+    delay(50000000*5);
+/*
+    __sinf(M_PI/4-0.0001);
+    __sinf(M_PI/4);
+    __sinf(M_PI/4+0.0001);
+
+    __sinf(M_PI/2-0.0001);
+    __sinf(M_PI/2);
+    __sinf(M_PI/2+0.0001);
+
+    __sinf(3*M_PI/4-0.0001);
+    __sinf(3*M_PI/4);
+    __sinf(3*M_PI/4+0.0001);
+
+    __sinf(M_PI-0.0001);
+    __sinf(M_PI);
+    __sinf(M_PI+0.0001);
+
+    jtaguart_puts("end\n");
+    
+
+    ts_start(&ts);
+    for (i=0;i<3141;i++)
+    {
+        float f;
+        f = __cosf(0.001*(float)i);
+        print_float(f*1000.0);
+        //delay(5000);
+    }    
+    ts_stop(&ts);
+    print_int((int)ts,1);    
+*/
+
+    
+    uint16_t qei0;
+    uint16_t qei1;
+
+    uint16_t qei0_last = 0;
+    uint16_t qei1_last = 0;
+
+    int16_t qei0_diff;
+    int16_t qei1_diff;
+
+    float entrax_cm = 27.4;
+    float left_cm_per_tick  = 32.0*M_PI/1024.0/10.0; //32
+    float right_cm_per_tick = 32.0*M_PI/1024.0/10.0; //32.1
+
+    //float x;
+    float y;
+    float a_rad = 0;
+    int16_t a_deg;
+
+
+    #define DEG(x) ((x) * (180.0 / M_PI))
+
+    // odometry
+    for(;;) {
+
+
+
+        pio_in = pio_0[0];
+        
+        qei0 = pio_in & 0xFFFF;
+        qei1 = (pio_in >> 16) & 0xFFFF;
+
+        if (qei0_last != qei0 || qei1_last != qei1)
+        {
+            ts_start(&ts);
+
+            qei0_diff = qei0-qei0_last;
+            qei1_diff = -(qei1-qei1_last);
+
+            qei0_last = qei0;
+            qei1_last = qei1;
+
+            /*
+            print_int(qei0_diff,0);
+            jtaguart_putc(':');
+            print_int(qei1_diff,1);
+            */
+
+            {
+	            float diff_left_cm = (float)qei0_diff*left_cm_per_tick;
+	            float diff_right_cm = (float)qei1_diff*right_cm_per_tick;
+
+                float distance = (diff_left_cm+diff_right_cm)/2.0;
+                float angle    = (diff_right_cm-diff_left_cm)/entrax_cm;
+
+		        a_rad+=angle;
+		        x = x + __cosf(a_rad) * (distance) ;
+		        y = y + __sinf(a_rad) * (distance) ;
+
+	            if (a_rad < -M_PI)
+		            a_rad += (M_PI*2);
+	            else if (a_rad > (M_PI))
+		            a_rad -= (M_PI*2);
+
+                a_deg = (int16_t)(DEG(a_rad));
+
+
+                ts_stop(&ts);
+                print_int((int)ts,1);    
+                
+                print_float(x,0);
+                jtaguart_putc(':');
+                print_float(y,0);
+                jtaguart_putc(':');
+                print_float(a_rad,0);
+                jtaguart_putc(':');
+                print_int(a_deg,1);                
+
+
+
+            }
+
+        }
+
+        
+    }
+
+
+
+
+    for(;;) {
 
 
         chr = jtaguart_getchar();
@@ -308,41 +635,41 @@ int main()
 
                 case 's':
                     scale/=10.0;
-                    print_float(scale);
+                    print_float(scale,1);
                     break;
                 case 'S':
                     scale*=10.0;
-                    print_float(scale);
+                    print_float(scale,1);
                     break; 
 
                 case 'k':
                     Kp-=scale;
-                    print_float(Kp);
+                    print_float(Kp,1);
                     break;
                 case 'K':
                     Kp+=scale;
-                    print_float(Kp);
+                    print_float(Kp,1);
                     break; 
 
 
                 case 'i':
                     Ki2-=scale;
-                    print_float(Ki2);
+                    print_float(Ki2,1);
                     break;
                 case 'I':
                     Ki2+=scale;
-                    print_float(Ki2);
+                    print_float(Ki2,1);
                     break; 
 
 
                 case 'c':
                     c-=scale;
-                    print_float(c);
+                    print_float(c,1);
                     break;
 
                 case 'C':
                     c+=scale;
-                    print_float(c);
+                    print_float(c,1);
                     break;
 
                 case 'o':

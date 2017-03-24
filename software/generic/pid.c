@@ -9,8 +9,28 @@
 
 typedef struct pid_mapping
 {
-    uint32_t cfg0;
-    uint32_t cfg1;
+    uint8_t reset;
+    uint8_t pgm_id;
+    uint8_t arg[2];
+    uint16_t period[2];
+    uint8_t enable;
+    uint8_t override;
+    uint16_t unused;
+    float P;
+    float I;
+    float D;
+    float speed;
+    float acc;
+    uint32_t sat;
+    union {
+        float f_measure;
+        uint32_t measure;
+    };
+    union {
+        float f_target;
+        uint32_t target;
+    };
+    int32_t output;
 } __attribute__((packed)) pid_mapping_t;
 
 
@@ -38,6 +58,22 @@ int pid_main(void* data)
     float e;
     float sat = 0;
     uint8_t debug = 0;
+
+    delay(10000);
+
+    if (pid->arg[0] == 0)
+    {
+        print_float(pid->f_measure,1);
+        pid->output = (int32_t)((float)pid->f_measure*10000);
+    }
+    else    
+    {
+        print_int(pid->measure,1);
+        pid->output = 0;
+    }
+
+
+
 
 
     for(;;) {
@@ -179,7 +215,7 @@ x = limit(Kp*e + x_integral, x_minimum, x_maximum)
 
             if (debug == 1)
                 print_int((int)ts,1);       
-
+  
         }      
 
 	}

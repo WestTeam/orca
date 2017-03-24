@@ -9,8 +9,9 @@
 
 typedef struct odo_mapping
 {
-    uint32_t cfg0;
-    uint32_t cfg1;
+    uint8_t reset;
+    uint8_t pgm_id;
+    uint8_t arg[2];
     float m_wheel_axe_mm;
     float m_wheel_diam_mm_left;
     float m_wheel_diam_mm_rigth;
@@ -64,6 +65,10 @@ typedef struct odo_mapping
     uint8_t id_pos = 0;
 
     #define DEG(x) ((x) * (180.0 / M_PI))
+
+    odo->odo_sum_m_distance = 0.4;
+    odo->odo_sum_m_angle = 2.5;
+
 
     // odometry v2;
     for(;;) {

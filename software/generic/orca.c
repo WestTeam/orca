@@ -14,8 +14,7 @@ typedef struct generic_mapping
 {
     uint8_t reset;
     uint8_t pgm_id;
-    uint16_t unused;
-    uint32_t cfg1;
+    uint8_t arg[2];
 } __attribute__((packed)) generic_mapping_t;
 
 #define PGM_ODOMETRY 0x00

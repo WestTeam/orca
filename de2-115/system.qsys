@@ -126,6 +126,110 @@
    {
       datum _originalDeviceFamily
       {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
          value = "Cyclone V";
          type = "String";
       }
@@ -134,111 +238,7 @@
    {
       datum _originalDeviceFamily
       {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
          value = "Cyclone V";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
          type = "String";
       }
    }
@@ -348,7 +348,7 @@
   <parameter name="initMemContent" value="true" />
   <parameter name="initializationFileName" value="test.hex" />
   <parameter name="instanceID" value="NONE" />
-  <parameter name="memorySize" value="65536" />
+  <parameter name="memorySize" value="40864" />
   <parameter name="readDuringWriteMode" value="DONT_CARE" />
   <parameter name="resetrequest_enabled" value="true" />
   <parameter name="simAllowMRAMContentsFile" value="false" />
@@ -361,6 +361,7 @@
   <parameter name="writable" value="true" />
  </module>
  <module name="pio_n_0" kind="pio_n" version="1.0" enabled="1">
+  <parameter name="ByteEnable" value="false" />
   <parameter name="RegCnt" value="16" />
  </module>
  <module

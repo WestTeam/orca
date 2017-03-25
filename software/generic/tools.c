@@ -7,7 +7,6 @@
 
 
 volatile int* uart = (volatile int*)(0x01000400);
-//volatile int* pio_0 = (volatile int*)(0x01000000);
 
 inline uint32_t get_time()
 {
@@ -63,22 +62,16 @@ void ts_stop(uint32_t *ts)
     *ts = get_time()-*ts;
 }
 
-/*
-uint8_t pio_0_get_data(int32_t *data)
+uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period)
 {
-    static uint8_t state = 0;
-
-    int32_t pio_in = pio_0[0];
-    if (((pio_in >> 31) & 0x1) != state)
-    {
-        state = (~state) & 0x1;
-        *data = pio_in & 0x7fffffff;
+    if ((get_time()-ts_start) >= period)
         return 1;
-    }
-    return 0;    
-}*/
+    else
+        return 0;
+}
 
 
+/*
 int32_t int24_to_int32(int32_t data)
 {
     int32_t ret;
@@ -92,7 +85,7 @@ int32_t int24_to_int32(int32_t data)
         ret = 0xff800000 | (data);
     }    
     return ret;
-}
+}*/
 
 
 /*
@@ -445,6 +438,19 @@ float __cosf(float x)
 		        return  __kernel_sinf(y[0],y[1],1);
 	    } */
 	}
+}
+
+void *memset(void *dst, int value, size_t size)
+{
+    if (size)
+    {
+        uint8_t* d = dst;
+        do
+        {
+            *d++=value;
+        } while (--size);
+    }
+    return dst;
 }
 
 

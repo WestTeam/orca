@@ -22,17 +22,14 @@ char jtaguart_getchar();
 
 
 void ts_start(uint32_t *ts);
-
-
 void ts_stop(uint32_t *ts);
+uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period);
 
 
 
-uint8_t pio_0_get_data(int32_t *data);
 
 
-
-int32_t int24_to_int32(int32_t data);
+//int32_t int24_to_int32(int32_t data);
 
 
 

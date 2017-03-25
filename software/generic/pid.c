@@ -60,18 +60,19 @@ int pid_main(void* data)
     uint8_t debug = 0;
 
     delay(10000);
-
-    if (pid->arg[0] == 0)
-    {
-        print_float(pid->f_measure,1);
-        pid->output = (int32_t)((float)pid->f_measure*10000);
+    while(1){
+        delay(100000000);
+        if (pid->arg[0] == 0)
+        {
+            print_float(pid->f_measure,1);
+            pid->output = (int32_t)((float)pid->f_measure*10000);
+        }
+        else    
+        {
+            print_int(pid->measure,1);
+            pid->output = 0;
+        }
     }
-    else    
-    {
-        print_int(pid->measure,1);
-        pid->output = 0;
-    }
-
 
 
 
@@ -173,7 +174,7 @@ x = limit(Kp*e + x_integral, x_minimum, x_maximum)
             if (debug == 2)
                 print_int((int)c,1);
 
-            vi = int24_to_int32(0x01) - 0;
+            vi = 0;//int24_to_int32(0x01) - 0;
 
             v = (float)vi;
 

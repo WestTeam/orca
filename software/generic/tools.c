@@ -345,6 +345,8 @@ float __sinf(float x)
 
 	GET_FLOAT_WORD(ix,x);
 
+    uint8_t neg = ix < 0;
+
     //print_int(ix,1);
 
     /* |x| ~< pi/4 */
@@ -364,18 +366,34 @@ float __sinf(float x)
         //PI/2   = 1070141403
         //3*PI/4 = 1075235812
         //PI     = 1078530011
-        if (ix < 1070141403)
+        if (neg == 0)
         {
-            return __kernel_cosf(M_PI/2-x,0.0);
-        } 
-        else if (ix < 1075235812)
-        {
-            return __kernel_cosf(x-M_PI/2,0.0);
-        }
-        else
-        {
-            return __kernel_sinf(M_PI-x,z,0);
-        }       
+            if (ix < 1070141403)
+            {
+                return __kernel_cosf(M_PI/2-x,0.0);
+            } 
+            else if (ix < 1075235812)
+            {
+                return __kernel_cosf(x-M_PI/2,0.0);
+            }
+            else
+            {
+                return __kernel_sinf(M_PI-x,z,0);
+            }    
+        } else {
+            if (ix < 1070141403)
+            {
+                return -__kernel_cosf(M_PI/2+x,0.0);
+            } 
+            else if (ix < 1075235812)
+            {
+                return -__kernel_cosf(-x-M_PI/2,0.0);
+            }
+            else
+            {
+                return -__kernel_sinf(M_PI+x,z,0);
+            }    
+        }   
         /*
 	    n = __ieee754_rem_pio2f(x,y);
 	    switch(n&3) {
@@ -397,6 +415,8 @@ float __cosf(float x)
 
 	GET_FLOAT_WORD(ix,x);
 
+    uint8_t neg = ix < 0;
+
     /* |x| ~< pi/4 */
 	ix &= 0x7fffffff;
 	if(ix <= 0x3f490fd8) return __kernel_cosf(x,z);
@@ -414,19 +434,23 @@ float __cosf(float x)
         //PI/2   = 1070141403
         //3*PI/4 = 1075235812
         //PI     = 1078530011
+        if (neg == 1)
+        {
+            x = -x;
+        }
+
         if (ix < 1070141403)
         {
             return __kernel_sinf(M_PI/2-x,0.0,0);
         } 
         else if (ix < 1075235812)
         {
-            return __kernel_sinf(x-M_PI/2,0.0,0);
+            return -__kernel_sinf(x-M_PI/2,0.0,0);
         }
         else
         {
-            return __kernel_cosf(M_PI-x,0.0);
+            return -__kernel_cosf(M_PI-x,0.0);
         }       
-
 
         /*
 	    n = 0;//__ieee754_rem_pio2f(x,y);

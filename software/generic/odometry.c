@@ -32,7 +32,7 @@ typedef struct odo_mapping
     float odo_sum_c_angle;
     uint8_t odo_pos_valid;
     uint8_t odo_pos_id;
-    uint16_t odo_pos_teta;
+    int16_t odo_pos_teta;
     uint16_t odo_pos_x;
     uint16_t odo_pos_y;
 } __attribute__((packed)) odo_mapping_t;
@@ -55,10 +55,10 @@ typedef struct odo_data
     uint16_t c_qei_latest[2];
 
     // INTERNALS
-    int64_t  m_qei_sum[2]; // sum from the init
-    int64_t  c_qei_sum[2];
-    int64_t  m_qei_sum_latest[2]; // latest processed value for position
-    int64_t  c_qei_sum_latest[2];
+    int32_t  m_qei_sum[2]; // sum from the init
+    int32_t  c_qei_sum[2];
+    int32_t  m_qei_sum_latest[2]; // latest processed value for position
+    int32_t  c_qei_sum_latest[2];
 
     // CONFIGS
     wheel_config_t m_wheel;
@@ -75,7 +75,7 @@ typedef struct odo_data
     float x;
     float y;
     float teta_rad; // modulo PI
-    uint16_t teta_deg; // (1 = 0.1deg)
+    int16_t teta_deg; // (1 = 0.1deg)
     uint8_t id;
 
 
@@ -95,12 +95,12 @@ void odometry_init(odo_mapping_t* regs, odo_data_t* data)
     data->c_qei_latest[0] = regs->c_qei_value[0];
     data->c_qei_latest[1] = regs->c_qei_value[1];
 
-    data->m_wheel.axe_mm = 300.0;
+    data->m_wheel.axe_mm = 274.0;
     data->m_wheel.axe_mm_inv = 1.0/data->m_wheel.axe_mm;
-    data->m_wheel.mm_per_tick[0] = 45.0*M_PI/(1024.0*728.0/45.0);
-    data->m_wheel.mm_per_tick[1] = 45.0*M_PI/(1024.0*728.0/45.0);
+    data->m_wheel.mm_per_tick[0] = 1.08*72.0*M_PI/(1024.0*728.0/45.0);
+    data->m_wheel.mm_per_tick[1] = 1.08*72.0*M_PI/(1024.0*728.0/45.0);
 
-    data->c_wheel.axe_mm = 274.0;
+    data->c_wheel.axe_mm = 234.0;
     data->c_wheel.axe_mm_inv = 1.0/data->c_wheel.axe_mm;
     data->c_wheel.mm_per_tick[0] = 32.0*M_PI/(1024.0);
     data->c_wheel.mm_per_tick[1] = 32.0*M_PI/(1024.0);
@@ -133,6 +133,18 @@ int odometry_main(void* data)
 
     odometry_init(regs,&odo);
 
+    int i;
+
+    print_float(__cosf(-M_PI/2),1);
+    print_float(__cosf(-M_PI/4),1);
+    print_float(__cosf(-3.0*M_PI/4.0),1);
+    print_float(__cosf(-M_PI),1);
+
+    print_float(__sinf(-M_PI/2),1);
+    print_float(__sinf(-M_PI/4),1);
+    print_float(__sinf(-3.0*M_PI/4.0),1);
+    print_float(__sinf(-M_PI),1);
+
 
     ts_start(&ts[TS_UPDATE]);
 
@@ -140,22 +152,22 @@ int odometry_main(void* data)
     for(;;) {
         int16_t qei[2];
 
-        qei[0] = regs->m_qei_value[0];
-        qei[1] = regs->m_qei_value[1];
+        qei[0] = regs->c_qei_value[0];
+        qei[1] = regs->c_qei_value[1];
         if (qei[0] != odo.m_qei_latest[0] || qei[1] != odo.m_qei_latest[1])
         {
             int32_t diff[2];
             // compute diff on each
-            diff[0] = (int32_t)qei[0]-(int32_t)odo.m_qei_latest[0];
-            diff[1] = (int32_t)qei[1]-(int32_t)odo.m_qei_latest[1];
+            diff[0] = -(int32_t)(((int16_t)(qei[0]-odo.m_qei_latest[0])));
+            diff[1] = (int32_t)(((int16_t)(qei[1]-odo.m_qei_latest[1])));
    
             // save current value for next computation
             odo.m_qei_latest[0] = qei[0];
             odo.m_qei_latest[1] = qei[1];
 
             // update the total sum on each side
-            odo.m_qei_sum[0] += (int64_t)diff[0];
-            odo.m_qei_sum[1] += (int64_t)diff[1];
+            odo.m_qei_sum[0] += (int32_t)diff[0];
+            odo.m_qei_sum[1] += (int32_t)diff[1];
 
             // update SUM distance
             odo.m_dist_sum += ((float)diff[0]*odo.m_wheel.mm_per_tick[0] + (float)diff[1]*odo.m_wheel.mm_per_tick[1])*0.5;
@@ -194,7 +206,7 @@ int odometry_main(void* data)
                                     
                     // processing
 
-                    int64_t diff[2];
+                    int32_t diff[2];
                     // compute diff on each
                     diff[0] = odo.m_qei_sum[0]-odo.m_qei_sum_latest[0];
                     diff[1] = odo.m_qei_sum[1]-odo.m_qei_sum_latest[1];
@@ -246,6 +258,9 @@ int odometry_main(void* data)
             {
 
                 case 'p':
+                    jtaguart_puts("QEI VALUE:\n");
+                    print_int((int32_t)odo.m_qei_latest[0],1);
+                    print_int((int32_t)odo.m_qei_latest[1],1);
                     jtaguart_puts("QEI M SUM:\n");
                     print_int((int32_t)odo.m_qei_sum[0],1);
                     print_int((int32_t)odo.m_qei_sum[1],1);

@@ -270,6 +270,24 @@ do {								\
 } while (0)
 #endif
 
+
+/* k_cosf.c -- float version of k_cos.c
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+
+
 static const float
 one =  1.0000000000e+00, /* 0x3f800000 */
 C1  =  4.1666667908e-02, /* 0x3d2aaaab */
@@ -305,6 +323,22 @@ float __kernel_cosf(float x, float y)
 }
 
 
+
+/* k_sinf.c -- float version of k_sin.c
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
 static const float
 half =  5.0000000000e-01,/* 0x3f000000 */
 S1  = -1.6666667163e-01, /* 0xbe2aaaab */
@@ -335,6 +369,20 @@ float __kernel_sinf(float x, float y, int iy)
 	else      return x-((z*(half*y-v*r)-y)-v*S1);
 }
 
+/* s_sinf.c -- float version of s_sin.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
 
 float __sinf(float x)
 {
@@ -406,6 +454,20 @@ float __sinf(float x)
 	}
 }
 
+/* s_cosf.c -- float version of s_cos.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
 float __cosf(float x)
 {
 	//float y[2];
@@ -463,6 +525,335 @@ float __cosf(float x)
 	    } */
 	}
 }
+
+
+/* e_sqrtf.c -- float version of e_sqrt.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+static	const float	fone	= 1.0,tiny=1.0e-30;
+
+float
+__ieee754_sqrtf(float x)
+{
+	float z;
+	int32_t sign = (int)0x80000000;
+	int32_t ix,s,q,m,t,i;
+	uint32_t r;
+
+	GET_FLOAT_WORD(ix,x);
+
+    /* take care of Inf and NaN */
+	if((ix&0x7f800000)==0x7f800000) {
+	    return x*x+x;		/* sqrt(NaN)=NaN, sqrt(+inf)=+inf
+					   sqrt(-inf)=sNaN */
+	}
+    /* take care of zero */
+	if(ix<=0) {
+	    if((ix&(~sign))==0) return x;/* sqrt(+-0) = +-0 */
+	    else if(ix<0)
+		return (x-x)/(x-x);		/* sqrt(-ve) = sNaN */
+	}
+    /* normalize x */
+	m = (ix>>23);
+	if(m==0) {				/* subnormal x */
+	    for(i=0;(ix&0x00800000)==0;i++) ix<<=1;
+	    m -= i-1;
+	}
+	m -= 127;	/* unbias exponent */
+	ix = (ix&0x007fffff)|0x00800000;
+	if(m&1)	/* odd m, double x to make it even */
+	    ix += ix;
+	m >>= 1;	/* m = [m/2] */
+
+    /* generate sqrt(x) bit by bit */
+	ix += ix;
+	q = s = 0;		/* q = sqrt(x) */
+	r = 0x01000000;		/* r = moving bit from right to left */
+
+	while(r!=0) {
+	    t = s+r;
+	    if(t<=ix) {
+		s    = t+r;
+		ix  -= t;
+		q   += r;
+	    }
+	    ix += ix;
+	    r>>=1;
+	}
+
+    /* use floating add to find out rounding direction */
+	if(ix!=0) {
+	    z = fone-tiny; /* trigger inexact flag */
+	    if (z>=fone) {
+		z = fone+tiny;
+		if (z>fone)
+		    q += 2;
+		else
+		    q += (q&1);
+	    }
+	}
+	ix = (q>>1)+0x3f000000;
+	ix += (m <<23);
+	SET_FLOAT_WORD(z,ix);
+	return z;
+}
+
+/* s_fabsf.c -- float version of s_fabs.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+float __fabsf(float x)
+{
+  return __builtin_fabsf (x);
+}
+
+
+/* s_atanf.c -- float version of s_atan.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+#define FLT_MIN 1.0E-37
+#define DBL_MIN 1.0E-37
+#define LDBL_MIN 1.0E-37
+
+# define math_force_eval(x) \
+({ __typeof (x) __x = (x); __asm __volatile__ ("" : : "m" (__x)); })
+
+#define __MATH_TG(TG_ARG, FUNC, ARGS)                                  \
+  (sizeof (TG_ARG) == sizeof (float) ? FUNC ## f ARGS : FUNC ARGS)
+
+
+#define fabs_tg(x) __MATH_TG ((x), (__typeof (x)) __builtin_fabs, (x))
+#define min_of_type(type) __builtin_choose_expr         \
+  (__builtin_types_compatible_p (type, float),          \
+   FLT_MIN,                                             \
+   __builtin_choose_expr                                \
+   (__builtin_types_compatible_p (type, double),        \
+    DBL_MIN, LDBL_MIN))
+
+
+
+/* If X (which is not a NaN) is subnormal, force an underflow
+   exception.  */
+#define math_check_force_underflow(x)                           \
+  do                                                            \
+    {                                                           \
+      __typeof (x) force_underflow_tmp = (x);                   \
+      if (fabs_tg (force_underflow_tmp)                         \
+          < min_of_type (__typeof (force_underflow_tmp)))       \
+        {                                                       \
+          __typeof (force_underflow_tmp) force_underflow_tmp2   \
+            = force_underflow_tmp * force_underflow_tmp;        \
+          math_force_eval (force_underflow_tmp2);               \
+        }                                                       \
+    }                                                           \
+  while (0)
+
+
+
+static const float atanhi[] = {
+  4.6364760399e-01, /* atan(0.5)hi 0x3eed6338 */
+  7.8539812565e-01, /* atan(1.0)hi 0x3f490fda */
+  9.8279368877e-01, /* atan(1.5)hi 0x3f7b985e */
+  1.5707962513e+00, /* atan(inf)hi 0x3fc90fda */
+};
+
+static const float atanlo[] = {
+  5.0121582440e-09, /* atan(0.5)lo 0x31ac3769 */
+  3.7748947079e-08, /* atan(1.0)lo 0x33222168 */
+  3.4473217170e-08, /* atan(1.5)lo 0x33140fb4 */
+  7.5497894159e-08, /* atan(inf)lo 0x33a22168 */
+};
+
+static const float aT[] = {
+  3.3333334327e-01, /* 0x3eaaaaaa */
+ -2.0000000298e-01, /* 0xbe4ccccd */
+  1.4285714924e-01, /* 0x3e124925 */
+ -1.1111110449e-01, /* 0xbde38e38 */
+  9.0908870101e-02, /* 0x3dba2e6e */
+ -7.6918758452e-02, /* 0xbd9d8795 */
+  6.6610731184e-02, /* 0x3d886b35 */
+ -5.8335702866e-02, /* 0xbd6ef16b */
+  4.9768779427e-02, /* 0x3d4bda59 */
+ -3.6531571299e-02, /* 0xbd15a221 */
+  1.6285819933e-02, /* 0x3c8569d7 */
+};
+
+static const float
+//one   = 1.0,
+huge   = 1.0e30;
+
+float __atanf(float x)
+{
+	float w,s1,s2,z;
+	int32_t ix,hx,id;
+
+	GET_FLOAT_WORD(hx,x);
+	ix = hx&0x7fffffff;
+	if(ix>=0x4c000000) {	/* if |x| >= 2^25 */
+	    if(ix>0x7f800000)
+		return x+x;		/* NaN */
+	    if(hx>0) return  atanhi[3]+atanlo[3];
+	    else     return -atanhi[3]-atanlo[3];
+	} if (ix < 0x3ee00000) {	/* |x| < 0.4375 */
+	    if (ix < 0x31000000) {	/* |x| < 2^-29 */
+		math_check_force_underflow (x);
+		if(huge+x>fone) return x;	/* raise inexact */
+	    }
+	    id = -1;
+	} else {
+	x = __fabsf(x);
+	if (ix < 0x3f980000) {		/* |x| < 1.1875 */
+	    if (ix < 0x3f300000) {	/* 7/16 <=|x|<11/16 */
+		id = 0; x = ((float)2.0*x-fone)/((float)2.0+x);
+	    } else {			/* 11/16<=|x|< 19/16 */
+		id = 1; x  = (x-fone)/(x+fone);
+	    }
+	} else {
+	    if (ix < 0x401c0000) {	/* |x| < 2.4375 */
+		id = 2; x  = (x-(float)1.5)/(fone+(float)1.5*x);
+	    } else {			/* 2.4375 <= |x| < 2^66 */
+		id = 3; x  = -(float)1.0/x;
+	    }
+	}}
+    /* end of argument reduction */
+	z = x*x;
+	w = z*z;
+    /* break sum from i=0 to 10 aT[i]z**(i+1) into odd and even poly */
+	s1 = z*(aT[0]+w*(aT[2]+w*(aT[4]+w*(aT[6]+w*(aT[8]+w*aT[10])))));
+	s2 = w*(aT[1]+w*(aT[3]+w*(aT[5]+w*(aT[7]+w*aT[9]))));
+	if (id<0) return x - x*(s1+s2);
+	else {
+	    z = atanhi[id] - ((x*(s1+s2) - atanlo[id]) - x);
+	    return (hx<0)? -z:z;
+	}
+}
+
+/* e_atan2f.c -- float version of e_atan2.c.
+ * Conversion to float by Ian Lance Taylor, Cygnus Support, ian@cygnus.com.
+ */
+
+/*
+ * ====================================================
+ * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+ *
+ * Developed at SunPro, a Sun Microsystems, Inc. business.
+ * Permission to use, copy, modify, and distribute this
+ * software is freely granted, provided that this notice
+ * is preserved.
+ * ====================================================
+ */
+
+static const float
+//tiny  = 1.0e-30,
+zero  = 0.0,
+pi_o_4  = 7.8539818525e-01,  /* 0x3f490fdb */
+pi_o_2  = 1.5707963705e+00,  /* 0x3fc90fdb */
+pi      = 3.1415927410e+00,  /* 0x40490fdb */
+pi_lo   = -8.7422776573e-08; /* 0xb3bbbd2e */
+
+float
+__ieee754_atan2f (float y, float x)
+{
+	float z;
+	int32_t k,m,hx,hy,ix,iy;
+
+	GET_FLOAT_WORD(hx,x);
+	ix = hx&0x7fffffff;
+	GET_FLOAT_WORD(hy,y);
+	iy = hy&0x7fffffff;
+	if((ix>0x7f800000)||
+	   (iy>0x7f800000))	/* x or y is NaN */
+	   return x+y;
+	if(hx==0x3f800000) return __atanf(y);   /* x=1.0 */
+	m = ((hy>>31)&1)|((hx>>30)&2);	/* 2*sign(x)+sign(y) */
+
+    /* when y = 0 */
+	if(iy==0) {
+	    switch(m) {
+		case 0:
+		case 1: return y;	/* atan(+-0,+anything)=+-0 */
+		case 2: return  pi+tiny;/* atan(+0,-anything) = pi */
+		case 3: return -pi-tiny;/* atan(-0,-anything) =-pi */
+	    }
+	}
+    /* when x = 0 */
+	if(ix==0) return (hy<0)?  -pi_o_2-tiny: pi_o_2+tiny;
+
+    /* when x is INF */
+	if(ix==0x7f800000) {
+	    if(iy==0x7f800000) {
+		switch(m) {
+		    case 0: return  pi_o_4+tiny;/* atan(+INF,+INF) */
+		    case 1: return -pi_o_4-tiny;/* atan(-INF,+INF) */
+		    case 2: return  (float)3.0*pi_o_4+tiny;/*atan(+INF,-INF)*/
+		    case 3: return (float)-3.0*pi_o_4-tiny;/*atan(-INF,-INF)*/
+		}
+	    } else {
+		switch(m) {
+		    case 0: return  zero  ;	/* atan(+...,+INF) */
+		    case 1: return -zero  ;	/* atan(-...,+INF) */
+		    case 2: return  pi+tiny  ;	/* atan(+...,-INF) */
+		    case 3: return -pi-tiny  ;	/* atan(-...,-INF) */
+		}
+	    }
+	}
+    /* when y is INF */
+	if(iy==0x7f800000) return (hy<0)? -pi_o_2-tiny: pi_o_2+tiny;
+
+    /* compute y/x */
+	k = (iy-ix)>>23;
+	if(k > 60) z=pi_o_2+(float)0.5*pi_lo;	/* |y/x| >  2**60 */
+	else if(hx<0&&k<-60) z=0.0;	/* |y|/x < -2**60 */
+	else z=__atanf(__fabsf(y/x));	/* safe to do y/x */
+	switch (m) {
+	    case 0: return       z  ;	/* atan(+,+) */
+	    case 1: {
+		      uint32_t zh;
+		      GET_FLOAT_WORD(zh,z);
+		      SET_FLOAT_WORD(z,zh ^ 0x80000000);
+		    }
+		    return       z  ;	/* atan(-,+) */
+	    case 2: return  pi-(z-pi_lo);/* atan(+,-) */
+	    default: /* case 3 */
+		    return  (z-pi_lo)-pi;/* atan(-,-) */
+	}
+}
+
+
 
 void *memset(void *dst, int value, size_t size)
 {

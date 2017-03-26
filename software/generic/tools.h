@@ -96,5 +96,10 @@ float __sinf(float x);
 
 float __cosf(float x);
 
+float __ieee754_sqrtf(float x);
+float __fabsf(float x);
 
+float __atanf(float x);
 
+float
+__ieee754_atan2f (float y, float x);

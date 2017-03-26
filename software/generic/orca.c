@@ -27,19 +27,19 @@ int main()
 {
     generic_mapping_t* generic = (generic_mapping_t*)pio_n;
 
-    switch (generic->pgm_id)
+    while (1)
     {
-        case PGM_ODOMETRY:
-            odometry_main((void*)generic);
-            break;
-        case PGM_PID:
-            pid_main((void*)generic);
-            break;
-        case PGM_TRAJECTORY:
-            pid_main((void*)generic);
-            break;        
+        switch (generic->pgm_id)
+        {
+            case PGM_ODOMETRY:
+                odometry_main((void*)generic);
+                break;
+            case PGM_PID:
+                pid_main((void*)generic);
+                break;
+            case PGM_TRAJECTORY:
+                pid_main((void*)generic);
+                break;        
+        }
     }
-
-
-
 }

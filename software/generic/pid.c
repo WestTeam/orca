@@ -59,6 +59,7 @@ int pid_main(void* data)
     float sat = 0;
     uint8_t debug = 0;
 
+/*
     delay(10000);
     while(1){
         delay(100000000);
@@ -73,7 +74,7 @@ int pid_main(void* data)
             pid->output = 0;
         }
     }
-
+*/
 
 
 

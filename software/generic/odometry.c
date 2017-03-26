@@ -22,14 +22,14 @@ typedef struct odo_mapping
     uint16_t period_latest;
     union {
         uint16_t c_qei_value[2];
-        float odo_sum_c_distance;
+        float odo_sum_m_distance;
     };
     union {
         uint16_t m_qei_value[2];
-        float odo_sum_c_angle;
+        float odo_sum_m_angle;
     };
-    float odo_sum_m_distance;
-    float odo_sum_m_angle;
+    float odo_sum_c_distance;
+    float odo_sum_c_angle;
     uint8_t odo_pos_valid;
     uint8_t odo_pos_id;
     int16_t odo_pos_teta;
@@ -125,14 +125,14 @@ void odometry_init(odo_mapping_t* regs, odo_data_t* data)
     data->ms.wheel.mm_per_tick[0] = 1.08*72.0*M_PI/(1024.0*728.0/45.0);
     data->ms.wheel.mm_per_tick[1] = 1.08*72.0*M_PI/(1024.0*728.0/45.0);
 
-    data->cs.wheel.axe_mm = 234.0;
+    data->cs.wheel.axe_mm = 188.0;
     data->cs.wheel.axe_mm_inv = 1.0/data->cs.wheel.axe_mm;
     data->cs.wheel.mm_per_tick[0] = 32.0*M_PI/(1024.0);
     data->cs.wheel.mm_per_tick[1] = 32.0*M_PI/(1024.0);
  
 }
 
-void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dist, float *regs_sum_angle)
+void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dist, float *regs_sum_angle,uint8_t inv)
 {
     uint16_t qei[2];
 
@@ -141,10 +141,15 @@ void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dis
     if (qei[0] != state->qei_latest[0] || qei[1] != state->qei_latest[1])
     {
         int32_t diff[2];
-        // compute diff on each
-        diff[0] = -(int32_t)(((int16_t)(qei[0]-state->qei_latest[0])));
-        diff[1] = (int32_t)(((int16_t)(qei[1]-state->qei_latest[1])));
-
+        if (inv==0)
+        {
+            // compute diff on each
+            diff[0] = -(int32_t)(((int16_t)(qei[0]-state->qei_latest[0])));
+            diff[1] = (int32_t)(((int16_t)(qei[1]-state->qei_latest[1])));
+        } else {
+            diff[0] = (int32_t)(((int16_t)(qei[0]-state->qei_latest[0])));
+            diff[1] = -(int32_t)(((int16_t)(qei[1]-state->qei_latest[1])));
+        }
         // save current value for next computation
         state->qei_latest[0] = qei[0];
         state->qei_latest[1] = qei[1];
@@ -211,9 +216,9 @@ int odometry_main(void* data)
     for(;;) {
 
         // update motor encoders 
-        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle);
+        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,0);
         // update coding wheel encoders
-        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle);
+        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle,1);
 
 
         // check if timer is elapsed to run the position update
@@ -324,6 +329,7 @@ int odometry_main(void* data)
                     break;
 
                 case 'r':
+                    // reset the current module
                     return 0;
 
             }

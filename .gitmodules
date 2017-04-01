@@ -1,3 +1,6 @@
 [submodule "tools/riscv-toolchain/riscv-tools"]
 	path = tools/riscv-toolchain/riscv-tools
 	url = https://github.com/riscv/riscv-tools.git
+[submodule "software/generic/cvra-modules"]
+	path = software/generic/cvra-modules
+	url = https://github.com/drunkpony/cvra-modules

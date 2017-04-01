@@ -38,7 +38,7 @@ int main()
                 pid_main((void*)generic);
                 break;
             case PGM_TRAJECTORY:
-                pid_main((void*)generic);
+                trajectory_main((void*)generic);
                 break;        
         }
     }

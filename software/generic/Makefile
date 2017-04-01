@@ -1,10 +1,14 @@
 all:
+
+INC=-Icvra-modules/modules/quadramp/ -Icvra-modules/modules/trajectory_manager/ -Icvra-modules/modules/position_manager/ -Icvra-modules/modules/control_system_manager/ -Icvra-modules/modules/math/vect2/ -Icvra-modules/modules/math/geometry/ -Icvra-modules/modules/robot_system/
+
+
 AS_SRCS=crt.S
 
 TARGETS=orca
 TARGET_C_SRCS=$(addsuffix .c,$(TARGETS))
 TARGET_C_OBJS=$(addprefix obj/,$(addsuffix .c.o,$(TARGETS)))
-C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, pid odometry tools $(C_SRCS)))
+C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, pid odometry tools trajectory cvra-modules/modules/quadramp/quadramp cvra-modules/modules/position_manager/2wheels/position_manager cvra-modules/modules/control_system_manager/control_system_manager cvra-modules/modules/robot_system/2wheels/robot_system cvra-modules/modules/math/vect2/vect2 cvra-modules/modules/trajectory_manager/2wheels/trajectory_manager cvra-modules/modules/trajectory_manager/2wheels/trajectory_manager_core cvra-modules/modules/trajectory_manager/2wheels/trajectory_manager_utils  $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
 
 CROSS_COMPILE=riscv32-unknown-elf-
@@ -12,11 +16,17 @@ CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 ARCH=RV32IMXmxp
-CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) -MD -Wall -std=gnu99 -msoft-float -mmuldiv
+CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) $(INC) -MD -Wall -std=gnu99 -msoft-float -mmuldiv
 LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
 
 obj/:
 	mkdir -p obj/
+	mkdir -p obj/cvra-modules/modules/quadramp/
+	mkdir -p obj/cvra-modules/modules/math/vect2/
+	mkdir -p obj/cvra-modules/modules/trajectory_manager/2wheels/
+	mkdir -p obj/cvra-modules/modules/position_manager/2wheels/
+	mkdir -p obj/cvra-modules/modules/control_system_manager/
+	mkdir -p obj/cvra-modules/modules/robot_system/2wheels/
 
 $(TARGET_C_OBJS) $(C_OBJ_FILES): obj/%.c.o : %.c | obj/
 	$(CC) $(CFLAGS) -c $< -o $@

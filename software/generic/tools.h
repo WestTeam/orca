@@ -6,7 +6,7 @@
 // #include "tools.h"
 
 
-
+#define ABS(x) (x)
 
 void delay(int cycles);
 

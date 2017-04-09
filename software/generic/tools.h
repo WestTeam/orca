@@ -23,6 +23,8 @@ char jtaguart_getchar();
 
 void ts_start(uint32_t *ts);
 void ts_stop(uint32_t *ts);
+uint32_t ts_freq_to_cycles(uint16_t freq_hz);
+uint16_t ts_cycles_to_freq(uint32_t cycles);
 uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period);
 
 

@@ -1,14 +1,14 @@
 
- #include <string.h>
- #include <stdint.h>
- #include <limits.h>
+#include <string.h>
+#include <stdint.h>
+#include <limits.h>
 
- #include "odometry.h"
- #include "pid.h"
+#include "odometry.h"
+#include "pid.h"
+#include "trajectory.h"
 
 volatile int* pio_n = (volatile int*)(0x01000000);
 
-#define M_PI           3.14159265358979323846
 
 typedef struct generic_mapping
 {

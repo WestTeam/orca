@@ -17,6 +17,27 @@
          type = "int";
       }
    }
+   element i2c_master
+   {
+      datum _sortIndex
+      {
+         value = "7";
+         type = "int";
+      }
+   }
+   element i2c_master.csr
+   {
+      datum _lockedAddress
+      {
+         value = "1";
+         type = "boolean";
+      }
+      datum baseAddress
+      {
+         value = "1088";
+         type = "String";
+      }
+   }
    element jtag_uart_0
    {
       datum _sortIndex
@@ -214,6 +235,22 @@
    {
       datum _originalDeviceFamily
       {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
          value = "Cyclone IV E";
          type = "String";
       }
@@ -234,19 +271,24 @@
          type = "String";
       }
    }
-   element system
+   element uart_0
    {
-      datum _originalDeviceFamily
+      datum _sortIndex
       {
-         value = "Cyclone V";
-         type = "String";
+         value = "6";
+         type = "int";
       }
    }
-   element system
+   element uart_0.s1
    {
-      datum _originalDeviceFamily
+      datum _lockedAddress
       {
-         value = "Cyclone IV E";
+         value = "1";
+         type = "boolean";
+      }
+      datum baseAddress
+      {
+         value = "1056";
          type = "String";
       }
    }
@@ -281,15 +323,30 @@
  <instanceScript></instanceScript>
  <interface name="clk" internal="clk_0.clk_in" type="clock" dir="end" />
  <interface name="from_host" internal="vectorblox_orca_0.from_host" />
+ <interface
+   name="i2c_master_serial"
+   internal="i2c_master.i2c_serial"
+   type="conduit"
+   dir="end" />
  <interface name="pio" internal="pio_n_0.data" type="conduit" dir="end" />
  <interface name="program_counter" internal="vectorblox_orca_0.program_counter" />
  <interface name="reset" internal="clk_0.clk_in_reset" type="reset" dir="end" />
  <interface name="to_host" internal="vectorblox_orca_0.to_host" />
+ <interface
+   name="uart_0_external"
+   internal="uart_0.external_connection"
+   type="conduit"
+   dir="end" />
  <module name="clk_0" kind="clock_source" version="16.1" enabled="1">
   <parameter name="clockFrequency" value="50000000" />
   <parameter name="clockFrequencyKnown" value="true" />
   <parameter name="inputClockFrequency" value="0" />
   <parameter name="resetSynchronousEdges" value="NONE" />
+ </module>
+ <module name="i2c_master" kind="altera_avalon_i2c" version="16.1" enabled="1">
+  <parameter name="FIFO_DEPTH" value="4" />
+  <parameter name="USE_AV_ST" value="0" />
+  <parameter name="clockRate" value="50000000" />
  </module>
  <module
    name="jtag_uart_0"
@@ -364,6 +421,22 @@
   <parameter name="ByteEnable" value="false" />
   <parameter name="RegCnt" value="16" />
  </module>
+ <module name="uart_0" kind="altera_avalon_uart" version="16.1" enabled="1">
+  <parameter name="baud" value="115200" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="dataBits" value="8" />
+  <parameter name="fixedBaud" value="false" />
+  <parameter name="parity" value="NONE" />
+  <parameter name="simCharStream" value="" />
+  <parameter name="simInteractiveInputEnable" value="false" />
+  <parameter name="simInteractiveOutputEnable" value="false" />
+  <parameter name="simTrueBaud" value="false" />
+  <parameter name="stopBits" value="1" />
+  <parameter name="syncRegDepth" value="2" />
+  <parameter name="useCtsRts" value="false" />
+  <parameter name="useEopRegister" value="true" />
+  <parameter name="useRelativePathForSimFile" value="false" />
+ </module>
  <module
    name="vectorblox_orca_0"
    kind="vectorblox_orca"
@@ -429,9 +502,24 @@
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
+ <connection
+   kind="avalon"
+   version="16.1"
+   start="mm_bridge_0.m0"
+   end="i2c_master.csr">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0440" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection kind="avalon" version="16.1" start="mm_bridge_0.m0" end="uart_0.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x0420" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <connection kind="clock" version="16.1" start="clk_0.clk" end="jtag_uart_0.clk" />
  <connection kind="clock" version="16.1" start="clk_0.clk" end="mm_bridge_0.clk" />
  <connection kind="clock" version="16.1" start="clk_0.clk" end="pio_n_0.clk" />
+ <connection kind="clock" version="16.1" start="clk_0.clk" end="uart_0.clk" />
  <connection
    kind="clock"
    version="16.1"
@@ -447,6 +535,7 @@
    version="16.1"
    start="clk_0.clk"
    end="vectorblox_orca_0.clock" />
+ <connection kind="clock" version="16.1" start="clk_0.clk" end="i2c_master.clock" />
  <connection
    kind="reset"
    version="16.1"
@@ -471,12 +560,22 @@
    kind="reset"
    version="16.1"
    start="clk_0.clk_reset"
+   end="uart_0.reset" />
+ <connection
+   kind="reset"
+   version="16.1"
+   start="clk_0.clk_reset"
    end="onchip_memory2_0.reset1" />
  <connection
    kind="reset"
    version="16.1"
    start="clk_0.clk_reset"
    end="onchip_memory2_0.reset2" />
+ <connection
+   kind="reset"
+   version="16.1"
+   start="clk_0.clk_reset"
+   end="i2c_master.reset_sink" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="FALSE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />

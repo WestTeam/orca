@@ -14,12 +14,12 @@ typedef struct odo_mapping
     uint8_t reset;
     uint8_t pgm_id;
     uint8_t arg[2];
+    uint16_t freq_hz_cfg;
+    uint16_t freq_hz_latest;
     float c_wheel_axe_mm;
     float c_wheel_mm_per_tick[2];
     float m_wheel_axe_mm;
     float m_wheel_mm_per_tick[2];
-    uint16_t period_cfg;
-    uint16_t period_latest;
     union {
         uint16_t c_qei_value[2];
         float odo_sum_m_distance;
@@ -33,8 +33,10 @@ typedef struct odo_mapping
     uint8_t odo_pos_valid;
     uint8_t odo_pos_id;
     int16_t odo_pos_teta;
-    uint16_t odo_pos_x;
-    uint16_t odo_pos_y;
+    int16_t odo_pos_x;
+    int16_t odo_pos_y;
+    float   odo_pos_sum_distance;
+    float   odo_pos_sum_angle;
 } __attribute__((packed)) odo_mapping_t;
 
 
@@ -94,7 +96,8 @@ typedef struct odo_data
     odo_state_t cs;
     odo_state_t ms;
 
-
+    uint16_t freq_hz;
+    uint32_t period_cycles;
     
     // OUTPUT PROCESSED
     float x;
@@ -216,15 +219,22 @@ int odometry_main(void* data)
     for(;;) {
 
         // update motor encoders 
-        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,0);
+        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle,0);
         // update coding wheel encoders
-        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle,1);
+        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,1);
+
+        if (odo.freq_hz != regs->freq_hz_cfg)
+        {
+            jtaguart_puts("hoho\n");
+            odo.freq_hz = regs->freq_hz_cfg;
+            odo.period_cycles = ts_freq_to_cycles(odo.freq_hz);
+        }
 
 
         // check if timer is elapsed to run the position update
         if (1)//(regs->period_cfg != 0)
         {
-            if (ts_is_elapsed(ts[TS_UPDATE],(uint32_t)500000))//regs->period_cfg))
+            if (ts_is_elapsed(ts[TS_UPDATE],(uint32_t)500000))//odo.period_cycles))
             {
 
 
@@ -268,16 +278,23 @@ int odometry_main(void* data)
                     regs->odo_pos_x = (int16_t)odo.x;
                     regs->odo_pos_y = (int16_t)odo.y;
                     regs->odo_pos_valid = 1;
+
+                    regs->odo_pos_sum_distance = odo.cs.dist_sum;
+                    regs->odo_pos_sum_angle = odo.cs.angle_sum;
+
                     
                     odo.cs.qei_sum_latest[0] = odo.cs.qei_sum[0];
                     odo.cs.qei_sum_latest[1] = odo.cs.qei_sum[1];
 
 
                     ts_stop(&ts[TS_DURATION]);
-                    period_latest = (uint16_t)ts[TS_DURATION];
-                    regs->period_latest = period_latest;
+                    period_latest = ts[TS_DURATION];
+                    regs->freq_hz_latest = ts_cycles_to_freq(period_latest);
+                } else {
+                    // we restart the timer
+                    ts_start(&ts[TS_UPDATE]);
                 }
-
+                
                 // check config changes (if any)
             }
             
@@ -326,6 +343,8 @@ int odometry_main(void* data)
                     print_float((float)odo.teta_deg/10.0,1);
                     jtaguart_puts("Period:\n");
                     print_int((int32_t)period_latest,1);
+                    jtaguart_puts("ID Pos:\n");
+                    print_int((int32_t)odo.id,1);
                     break;
 
                 case 'r':

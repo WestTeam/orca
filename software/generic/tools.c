@@ -62,6 +62,26 @@ void ts_stop(uint32_t *ts)
     *ts = get_time()-*ts;
 }
 
+#define CPU_CLK_PERIOD_NS 20
+
+uint32_t ts_freq_to_cycles(uint16_t freq_hz)
+{
+    uint32_t cycles = 1;
+    if (freq_hz != 0)
+        cycles = 1000*1000*1000/CPU_CLK_PERIOD_NS/freq_hz;
+    return cycles;
+}
+
+uint16_t ts_cycles_to_freq(uint32_t cycles)
+{
+    uint32_t freq_hz = 0;
+    if (cycles != 0)
+        freq_hz = 1000*1000*1000/CPU_CLK_PERIOD_NS/cycles;
+    if (freq_hz > (1<<16)-1)
+        freq_hz = (1<<16)-1;
+    return (uint16_t)freq_hz;
+}
+
 uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period)
 {
     if ((get_time()-ts_start) >= period)
@@ -211,12 +231,12 @@ char* itoa(int num, char* str, int base)
 void print_int(int i,uint8_t ret)
 {
     char buf[32];
-
+    
     itoa(i,buf,10);
     int s = strlen(buf);
     if (ret)
-        buf[s] = '\n';
-    buf[s+1] = '\0';
+        buf[s++] = '\n';
+    buf[s] = '\0';
     jtaguart_puts(buf);
 }
 

@@ -12,8 +12,8 @@ typedef struct pid_mapping
     uint8_t reset;
     uint8_t pgm_id;
     uint8_t arg[2];
-    uint16_t period_cfg;
-    uint16_t period_latest;
+    uint16_t freq_hz_cfg;
+    uint16_t freq_hz_latest;
     uint8_t enable;
     uint8_t override;
     uint16_t unused;
@@ -84,7 +84,10 @@ int pid_main(void* data)
 
     float f_target = 0;
     uint32_t target = 0;
-
+    
+    uint16_t freq_hz;
+    uint32_t period_cycles;
+    uint32_t period_latest;
 
     ts_start(&ts[TS_UPDATE]);
 
@@ -96,7 +99,15 @@ int pid_main(void* data)
 
         if (enabled == 1)//(regs->period_cfg != 0)
         {
-            if (ts_is_elapsed(ts[TS_UPDATE],(uint32_t)5000))//regs->period_cfg))
+
+            if (freq_hz != regs->freq_hz_cfg)
+            {
+                freq_hz = regs->freq_hz_cfg;
+                period_cycles = ts_freq_to_cycles(freq_hz);
+            }
+
+
+            if (ts_is_elapsed(ts[TS_UPDATE],(uint32_t)5000))//period_cycles))
             {
                 ts_start(&ts[TS_DURATION]);
                 ts[TS_UPDATE] = ts[TS_DURATION];
@@ -178,6 +189,8 @@ int pid_main(void* data)
 
 
                 ts_stop(&ts[TS_DURATION]);
+                period_latest = ts[TS_DURATION];
+                regs->freq_hz_latest = ts_cycles_to_freq(period_latest);
 
                 if (debug == 1)
                     print_int((int)ts,1);       
@@ -230,6 +243,11 @@ int pid_main(void* data)
                         print_int(target,1);                        
                         print_int(regs->measure,1); 
                     }
+                    print_int(regs->enable,1);
+                    print_int(regs->override,1);
+                    print_float(regs->speed,1);
+                    print_float(regs->acc,1);
+                    print_float(regs->f_target,1);
 
                     print_float(e,1);
                     print_float(x_integral,1);

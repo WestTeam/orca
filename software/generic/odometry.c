@@ -116,6 +116,8 @@ void odometry_init(odo_mapping_t* regs, odo_data_t* data)
     memset((void*)data,0,sizeof(*data));
     memset((void*)regs,0,sizeof(*regs));
 
+    print_int(regs->m_qei_value[0],1);
+
     // read current QEI
     data->ms.qei_latest[0] = regs->m_qei_value[0];
     data->ms.qei_latest[1] = regs->m_qei_value[1];
@@ -133,6 +135,7 @@ void odometry_init(odo_mapping_t* regs, odo_data_t* data)
     data->cs.wheel.mm_per_tick[0] = 32.0*M_PI/(1024.0);
     data->cs.wheel.mm_per_tick[1] = 32.0*M_PI/(1024.0);
  
+    
 }
 
 void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dist, float *regs_sum_angle,uint8_t inv)
@@ -144,14 +147,28 @@ void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dis
     if (qei[0] != state->qei_latest[0] || qei[1] != state->qei_latest[1])
     {
         int32_t diff[2];
+        
+
+        diff[0] = (int32_t)qei[0]-(int32_t)state->qei_latest[0];
+        if (diff[0] > (1<<15))
+            diff[0] -= (1<<16);
+        if (diff[0] < -(1<<15))
+            diff[0] += (1<<16);
+ 
+        diff[1] = (int32_t)qei[1]-(int32_t)state->qei_latest[1];
+        if (diff[1] > (1<<15))
+            diff[1] -= (1<<16);
+        if (diff[1] < -(1<<15))
+            diff[1] += (1<<16);
+
         if (inv==0)
         {
             // compute diff on each
-            diff[0] = -(int32_t)(((int16_t)(qei[0]-state->qei_latest[0])));
-            diff[1] = (int32_t)(((int16_t)(qei[1]-state->qei_latest[1])));
+            diff[0] = -diff[0];
+            diff[1] = diff[1];
         } else {
-            diff[0] = (int32_t)(((int16_t)(qei[0]-state->qei_latest[0])));
-            diff[1] = -(int32_t)(((int16_t)(qei[1]-state->qei_latest[1])));
+            diff[0] = diff[0];
+            diff[1] = -diff[1];
         }
         // save current value for next computation
         state->qei_latest[0] = qei[0];
@@ -201,6 +218,13 @@ int odometry_main(void* data)
     uint32_t period_latest = 0;
 
     odometry_init(regs,&odo);
+    print_int(regs->m_qei_value[0],1);
+    print_int(odo.ms.qei_latest[0],1);
+    print_int(odo.ms.qei_latest[1],1);
+    print_int(odo.cs.qei_latest[0],1);
+    print_int(odo.cs.qei_latest[1],1);
+
+
 
     print_float(__ieee754_atan2f(__atanf(__ieee754_sqrtf(__fabsf(__cosf(-M_PI/2)))),2.0),1);
     print_float(__cosf(-M_PI/4),1);
@@ -219,9 +243,9 @@ int odometry_main(void* data)
     for(;;) {
 
         // update motor encoders 
-        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle,0);
+        odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,0);
         // update coding wheel encoders
-        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,1);
+        odo_update_state(&odo.cs,&regs->c_qei_value[0],&regs->odo_sum_c_distance,&regs->odo_sum_c_angle,1);
 
         if (odo.freq_hz != regs->freq_hz_cfg)
         {

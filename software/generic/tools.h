@@ -6,18 +6,18 @@
 // #include "tools.h"
 
 
-#define ABS(x) (x)
+#define ABS(x) __fabsf(x)
 
 void delay(int cycles);
 
 
 
 void jtaguart_putc(char c);
-
 void jtaguart_puts(char* s);
-
-
 char jtaguart_getchar();
+
+void uart_rs232_configure(uint16_t divisor);
+void uart_rs232_tx(uint8_t data);
 
 
 

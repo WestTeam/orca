@@ -226,21 +226,16 @@ int odometry_main(void* data)
 
 
 
-    print_float(__ieee754_atan2f(__atanf(__ieee754_sqrtf(__fabsf(__cosf(-M_PI/2)))),2.0),1);
-    print_float(__cosf(-M_PI/4),1);
-    print_float(__cosf(-3.0*M_PI/4.0),1);
-    print_float(__cosf(-M_PI),1);
-
-    print_float(__sinf(-M_PI/2),1);
-    print_float(__sinf(-M_PI/4),1);
-    print_float(__sinf(-3.0*M_PI/4.0),1);
-    print_float(__sinf(-M_PI),1);
-
-
     ts_start(&ts[TS_UPDATE]);
+
+    uart_rs232_configure(50000000/1000000);
 
     // odometry v2;
     for(;;) {
+
+        //uart_rs232_tx('a');
+        //uart_rs232_tx('b');
+
 
         // update motor encoders 
         odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,0);

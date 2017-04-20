@@ -8,7 +8,7 @@
 #include <control_system_manager.h>
 #include <2wheels/robot_system.h>
 #include <2wheels/position_manager.h>
-
+#include <quadramp.h>
 
 #include "tools.h"
 
@@ -59,8 +59,7 @@ typedef struct trajectory_mapping
     #define CMD_TYPE_TRAJ 0x0
     #define CMD_TYPE_CFG_DISTANCE 0x1
     #define CMD_TYPE_CFG_ANGLE 0x2
-
-
+    #define CMD_TYPE_CFG_WND 0x3
 
 
     uint8_t cmd_valid; // IN
@@ -70,10 +69,15 @@ typedef struct trajectory_mapping
     union {
         struct cfg
         {
-            float wnd; // IN
             float speed; // IN
             float acc; // IN
         } cfg; 
+        struct wnd
+        {
+            float distance; // IN
+            float angle_deg; // IN
+            float angle_start_deg; // IN
+        } wnd; 
         struct order_pos
         {
             float teta; // IN 
@@ -119,6 +123,8 @@ typedef struct trajectory_data
     struct robot_position pos;
     struct cs cs_a;
     struct cs cs_d;
+    struct quadramp_filter qr_a;
+    struct quadramp_filter qr_d;
     struct trajectory trj;
 
     // latest position received
@@ -152,20 +158,28 @@ void _trajectory_init(trajectory_mapping_t* regs, trajectory_data_t* data)
 
     trajectory_init(&data->trj, 100.0);
     trajectory_set_cs(&data->trj,&data->cs_d,&data->cs_a);
+    data->cs_d.consign_filter_params = &data->qr_d;
+    data->cs_a.consign_filter_params = &data->qr_a;
     trajectory_set_robot_params(&data->trj,&data->rs,&data->pos);
-
+    trajectory_set_windows(&data->trj,5.0,2.0,3.0);
 
 }
 
 
 void trajectory_update_position(trajectory_mapping_t* regs, trajectory_data_t* data)
 {
+    data->rs.virtual_encoders.distance = regs->odo.sum_m_distance;
+    data->rs.virtual_encoders.angle    = regs->odo.sum_m_angle;
+
+    data->rs.pext_prev.distance = regs->odo.sum_c_distance;//pos_sum_distance;
+    data->rs.pext_prev.angle    = regs->odo.sum_c_angle;//pos_sum_angle;
+
     uint8_t pos_id = regs->odo.pos_id;
     if (regs->odo.pos_valid == 1 && (pos_id != data->pos_id || data->pos_valid == 0))
     {
-        print_int(pos_id,1);
-        print_int(data->pos_id,1);
-        print_int(regs->odo.pos_id,1);
+        //print_int(pos_id,1);
+        //print_int(data->pos_id,1);
+        //print_int(regs->odo.pos_id,1);
         
         int16_t pos_teta = regs->odo.pos_teta; 
         int16_t pos_x    = regs->odo.pos_x; 
@@ -182,11 +196,10 @@ void trajectory_update_position(trajectory_mapping_t* regs, trajectory_data_t* d
             data->pos.pos_d.x = (float)pos_x;
             data->pos.pos_d.y = (float)pos_y;
             float fpos_teta = (float)pos_teta;
-            print_float(fpos_teta,1);
+            //print_float(fpos_teta,1);
             data->pos.pos_d.a = fpos_teta * (M_PI / 1800.0);
 
-            data->rs.virtual_encoders.distance = pos_sum_distance;
-            data->rs.virtual_encoders.angle    = pos_sum_angle;
+
 
             data->pos_valid = 1;
             data->pos_id = pos_id;
@@ -201,12 +214,17 @@ void trajectory_update_position(trajectory_mapping_t* regs, trajectory_data_t* d
 void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     uint8_t cmd_id = regs->cmd_id;
-  
+
     if (regs->cmd_valid == 1 && (cmd_id != data->cmd_id || data->cmd_valid == 0))
     {
+        //print_int(cmd_id,1);
         uint8_t cmd_type = regs->cmd_type;
         uint8_t cmd_order_type = regs->cmd_order_type;
-        float wnd       = regs->cmd.cfg.wnd;
+        float wnd_distance = regs->cmd.wnd.distance;
+        float wnd_angle_deg= regs->cmd.wnd.angle_deg;
+        float wnd_angle_start_deg= regs->cmd.wnd.angle_start_deg;
+
+
         float speed     = regs->cmd.cfg.speed;
         float acc       = regs->cmd.cfg.acc;
 
@@ -222,28 +240,39 @@ void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
             // depending on the command type, we save the data:
             switch (cmd_type) 
             {
-#define TRAJ_STOP 0
-#define TRAJ_HARDSTOP 1
-#define TRAJ_D_REL 2
-#define TRAJ_ONLY_D_REL 3
-#define TRAJ_A_REL 4
-#define TRAJ_A_ABS 5
-#define TRAJ_ONLY_A_REL 6
-#define TRAJ_ONLY_A_ABS 7
-#define TRAJ_D_A_REL 8
-#define TRAJ_TURNTO_XY 9
-#define TRAJ_TURNTO_XY_BEHIND 10
-#define TRAJ_GOTO_XY_ABS 11
-#define TRAJ_GOTO_FORWARD_XY_ABS 12
-#define TRAJ_GOTO_BACKWARD_XY_ABS 13
-#define TRAJ_GOTO_D_A_REL 14
-#define TRAJ_GOTO_XY_REL 15
+#define TRAJ_DISABLE 0
+#define TRAJ_ENABLE 1
+#define TRAJ_STOP 2
+#define TRAJ_HARDSTOP 3
+#define TRAJ_D_REL 4
+#define TRAJ_ONLY_D_REL 5
+#define TRAJ_A_REL 6
+#define TRAJ_A_ABS 7
+#define TRAJ_ONLY_A_REL 8
+#define TRAJ_ONLY_A_ABS 9
+#define TRAJ_D_A_REL 10
+#define TRAJ_TURNTO_XY 11
+#define TRAJ_TURNTO_XY_BEHIND 12
+#define TRAJ_GOTO_XY_ABS 13
+#define TRAJ_GOTO_FORWARD_XY_ABS 14
+#define TRAJ_GOTO_BACKWARD_XY_ABS 15
+#define TRAJ_GOTO_D_A_REL 16
+#define TRAJ_GOTO_XY_REL 17
 
 
 
                 case CMD_TYPE_TRAJ:
                     switch (cmd_order_type)
                     {
+                        case TRAJ_DISABLE:
+                            regs->pid.distance.enable = 0;
+                            regs->pid.angle.enable = 0;
+                            break;
+                        case TRAJ_ENABLE:
+                            trajectory_stop(&data->trj);
+                            regs->pid.distance.enable = 1;
+                            regs->pid.angle.enable = 1;
+                            break;
                         case TRAJ_STOP:
                             trajectory_stop(&data->trj);
                             break;
@@ -300,20 +329,21 @@ void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
                 case CMD_TYPE_CFG_DISTANCE:
                     data->trj.d_speed = speed;
                     data->trj.d_acc = acc;
-                    data->trj.d_win = wnd;
-
                    break;
+
                 case CMD_TYPE_CFG_ANGLE:
                     data->trj.a_speed = speed;
                     data->trj.a_acc = acc;
-                    data->trj.a_win_rad = wnd;
+                    break;
 
-
+                case CMD_TYPE_CFG_WND:
+                    trajectory_set_windows(&data->trj,wnd_distance,wnd_angle_deg,wnd_angle_start_deg);
                     break;
             }
 
             data->cmd_valid = 1;
             data->cmd_id = cmd_id;
+            regs->traj_cmd_ack = cmd_id+1;
         }
     }
 
@@ -323,14 +353,19 @@ void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
 void trajectory_update_target(trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     
-    regs->pid.distance.enable = 1;
-    regs->pid.distance.speed = 0.345;
-    regs->pid.distance.acc = 0.2345;
+    //regs->pid.distance.enable = 1;
+    regs->pid.distance.speed = data->qr_d.var_1st_ord_pos;//data->trj.d_speed;
+    regs->pid.distance.acc = data->qr_d.var_2nd_ord_pos;//data->trj.d_acc;
     regs->pid.distance.target = data->cs_d.consign_value;
 
-    regs->pid.angle.enable = 1;
+    //regs->pid.angle.enable = 1;
+    regs->pid.angle.speed = data->qr_a.var_1st_ord_pos;//data->trj.a_speed;
+    regs->pid.angle.acc = data->qr_a.var_2nd_ord_pos;//data->trj.a_acc;
     regs->pid.angle.target = data->cs_a.consign_value;
 
+    regs->traj_state = data->trj.state;
+
+    regs->traj_in_window = trajectory_in_window(&data->trj,data->trj.d_win,data->trj.a_win_rad);
 }
 
 
@@ -338,6 +373,9 @@ int trajectory_main(void* data)
 {
     trajectory_mapping_t* regs = (trajectory_mapping_t*)data;
     trajectory_data_t traj;
+
+    // DEBUG
+    char chr;
 
     uint32_t ts[2];
     #define TS_UPDATE 0
@@ -352,16 +390,29 @@ int trajectory_main(void* data)
     print_float(traj.pos.pos_d.a,1);
 
     jtaguart_puts("Trajectory: Init\n");
-    print_int(sizeof(*regs),1);
+/*    print_int(sizeof(*regs),1);
+    print_int(sizeof(regs->odo),1);
+    print_int(sizeof(regs->pid),1);
+*/
 
     _trajectory_init(regs,&traj);
 
 
     ts_start(&ts[TS_UPDATE]);
 
+
+
+
     // trajectory manager;
     for(;;) {
 
+        chr = jtaguart_getchar();
+
+        // update position
+        trajectory_update_position(regs,&traj);
+                        
+        // update order
+        trajectory_update_cmd(regs,&traj); 
 
         // check if timer is elapsed to run the position update
         if (1)//(regs->period_cfg != 0)
@@ -378,24 +429,18 @@ int trajectory_main(void* data)
                 if (1)
                 {
                     ts_start(&ts[TS_DURATION]);
-                    ts[TS_UPDATE] = ts[TS_DURATION];
-
-                    // update position
-                    trajectory_update_position(regs,&traj);
-                                    
-                    // update order
-                    trajectory_update_cmd(regs,&traj);                    
+                    ts[TS_UPDATE] = ts[TS_DURATION];                   
 
                     // processing
                     trajectory_manager_event((void*)&traj.trj);
-
-                    // update output to send target / config to PIDs
-                    trajectory_update_target(regs,&traj);
 
                     ts_stop(&ts[TS_DURATION]);
                     period_latest = ts[TS_DURATION];
                     freq_latest = ts_cycles_to_freq(period_latest);
                     regs->freq_hz_latest = freq_latest;
+
+                    //chr = 'p';
+
                 }
 
                 // check config changes (if any)
@@ -405,11 +450,10 @@ int trajectory_main(void* data)
             ts_start(&ts[TS_UPDATE]);
         }
 
+        // update output to send target / config to PIDs
+        trajectory_update_target(regs,&traj);
 
-        // DEBUG
-        char chr;
 
-        chr = jtaguart_getchar();
         if (chr != 0)
         {
             switch (chr)
@@ -417,11 +461,12 @@ int trajectory_main(void* data)
 
                 case 'p':
                     jtaguart_puts("----- Trajectory Infos ----\n");
-                    jtaguart_puts("(X/Y/A deg)\n");
+                    jtaguart_puts("(X/Y/A deg/A Rad)\n");
                     print_int((int32_t)traj.pos.pos_s16.x,1);
                     print_int((int32_t)traj.pos.pos_s16.y,1);
                     print_int((int32_t)traj.pos.pos_s16.a,1);
-                    print_int(regs->odo.pos_teta,1);
+                    print_float(traj.trj.position->pos_d.a,1);
+/*                    print_int(regs->odo.pos_teta,1);
                     print_int(regs->odo.pos_x,1);
                     print_int(regs->odo.pos_y,1);
                     print_float(regs->odo.sum_m_distance,1);
@@ -433,9 +478,25 @@ int trajectory_main(void* data)
                     jtaguart_puts("Freq Period\n");
                     print_int(freq_latest,1);
                     print_int((int32_t)period_latest,1);
-                    jtaguart_puts("Pos ID\n");
-                    uint8_t id = regs->odo.pos_id;
-                    print_int((int32_t)id,1);
+                    print_int((int32_t)regs->freq_hz_cfg,1);
+                    print_float(traj.trj.target.pol.angle,1);
+                    
+*/
+                    print_float(traj.trj.d_win,1);
+                    print_float(traj.trj.a_win_rad,1);
+                    print_float(traj.trj.a_start_rad,1);
+
+
+                    jtaguart_puts("Dist - Speed/Acc/Target\n");  
+                    print_float(traj.qr_d.var_1st_ord_pos,1);
+                    print_float(traj.qr_d.var_2nd_ord_pos,1);
+                    print_float(traj.cs_d.consign_value,1);
+
+                    jtaguart_puts("Angle - Speed/Acc/Target\n");  
+                    print_float(traj.qr_a.var_1st_ord_pos,1);
+                    print_float(traj.qr_a.var_2nd_ord_pos,1);
+                    print_float(traj.cs_a.consign_value,1);
+
                     break;
 
                 case 'r':
@@ -444,6 +505,7 @@ int trajectory_main(void* data)
                     break;
 
             }
+            chr = 0;
         }        
 
 

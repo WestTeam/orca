@@ -6,7 +6,12 @@
 // #include "tools.h"
 
 
-volatile int* uart = (volatile int*)(0x01000400);
+volatile int* uart_jtag = (volatile int*)(0x01000400);
+
+volatile int* uart_rs232 = (volatile int*)(0x01000420);
+
+volatile int* i2c_master = (volatile int*)(0x01000440);
+
 
 inline uint32_t get_time()
 {
@@ -25,9 +30,9 @@ void delay(int cycles)
 void jtaguart_putc(char c)
 {
 
-	while((uart[1]&0xffff0000) == 0){
+	while((uart_jtag[1]&0xffff0000) == 0){
 	}//uart fifo full
-	uart[0]=c;
+	uart_jtag[0]=c;
 
 }
 
@@ -41,12 +46,42 @@ void jtaguart_puts(char* s)
 
 char jtaguart_getchar()
 {
-    unsigned int reg = uart[0];
+    unsigned int reg = uart_jtag[0];
     
     if (((reg>>15)&0x1)==1)
         return (reg&0xff);
     else
         return '\0';
+
+}
+
+#define UART_RS232_REG_DIVISOR 4
+
+void uart_rs232_configure(uint16_t divisor)
+{
+    uart_rs232[UART_RS232_REG_DIVISOR] = (uint32_t)(divisor+1);
+
+}
+
+#define UART_RS232_REG_TX_DATA 1
+#define UART_RS232_REG_STATUS 2
+
+#define UART_RS232_REG_STATUS_TRDY_OFFSET  (6)
+#define UART_RS232_REG_STATUS_TRDY_MASK (1<<UART_RS232_REG_STATUS_TRDY_OFFSET)
+
+void uart_rs232_tx(uint8_t data)
+{
+    uint32_t status;
+
+    do {
+        status = uart_rs232[UART_RS232_REG_STATUS];
+   
+        if (status & UART_RS232_REG_STATUS_TRDY_MASK)
+        {
+            uart_rs232[UART_RS232_REG_TX_DATA] = (uint32_t)(data);
+            return;
+        }
+    } while (1);
 
 }
 

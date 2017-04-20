@@ -156,8 +156,20 @@ void pid_update_config(pid_data_t* data,pid_mapping_t* regs)
 
     if (speed != data->speed || acc != data->acc)
     {
+        data->speed = speed;
+        data->acc = acc;
+
         quadramp_set_2nd_order_vars(&data->qr,acc,acc);
         quadramp_set_1st_order_vars(&data->qr,speed,speed);
+/*
+        print_float(data->f_target,0);
+        jtaguart_puts("|");
+        print_float(data->qr.previous_out,0);
+        jtaguart_puts("|");
+        print_float(speed,0);
+        jtaguart_puts("|");
+        print_float(acc,1);
+*/
     }
 
     if (enable == 1 && data->enabled == 0)
@@ -268,7 +280,12 @@ int pid_main(void* data)
 
     ts_start(&ts[TS_UPDATE]);
 
+    uart_rs232_configure(50000000/1000000);
+
     for(;;) {
+
+        //uart_rs232_tx('a');
+        //uart_rs232_tx('b');
 
         pid_update_config(&pid,regs);
 
@@ -340,6 +357,7 @@ int pid_main(void* data)
                         print_int(regs->measure,1); 
                     }
                     print_float(pid.qr.previous_out,1);                        
+                    print_float(pid.qr.previous_var,1);                        
                     print_int(regs->enable,1);
                     print_int(regs->override,1);
                     print_float(regs->speed,1);

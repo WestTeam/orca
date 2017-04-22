@@ -240,39 +240,35 @@ void pid_update_output(pid_data_t* data,pid_mapping_t* regs)
 }
 
 
+typedef struct {
+    ProtocolHeader hdr;
+    uint32_t timestamp; // 1 = 20ns
+    float speed;
+    float acc;
+    float target;
+    float filtered_target; // after quadramp
+    float measure;
+    float output;
+} __attribute__((packed)) pid_debug;
+
+
 int pid_main(void* data)
 {
     pid_mapping_t* regs = (pid_mapping_t*)data;
     pid_data_t pid;
+    uart_tx_state tx_state;
+    pid_debug tx_buffer;
 
-    //uint32_t ts = 0;
-//    uint8_t out_inverted = 0;
-//    uint32_t id = 0;
-
-//    uint8_t enabled = 0;
-//    float x = 0;
-//    float Kp = 6500;
-//    float Ki2 = 0.000;
-//    float x_integral = 0;
-//    float x_min = -15000;
-//    float x_max = 15000;
     float scale = 100.00;
 
     char chr;    
 
-
-//    float e = 0;
-//    float sat = 0;
     uint8_t debug = 0;
 
     uint32_t ts[2];
     #define TS_UPDATE 0
     #define TS_DURATION 1
 
-
-
-//    float f_target = 0;
-//    int32_t target = 0;
     
     uint16_t freq_hz = 0;
     uint32_t period_cycles = 0;
@@ -282,10 +278,16 @@ int pid_main(void* data)
 
     uart_rs232_configure(50000000/1000000);
 
+    uart_rs232_buffer_init(&tx_state,(uint8_t*)&tx_buffer,sizeof(tx_buffer));
+
+    tx_buffer.hdr.fanion = PROTOCOL_FANION;
+    tx_buffer.hdr.size = sizeof(pid_debug);
+    tx_buffer.hdr.crc = 0;
+    tx_buffer.hdr.id = 1;
+
     for(;;) {
 
-        //uart_rs232_tx('a');
-        //uart_rs232_tx('b');
+        uart_rs232_buffer_tx_process(&tx_state);
 
         pid_update_config(&pid,regs);
 
@@ -311,12 +313,33 @@ int pid_main(void* data)
 
                 pid_update_output(&pid,regs);
 
+
+/*
+    float speed;
+    float acc;
+    float target;
+    float filtered_target; // after quadramp
+    float measure;
+    float output;
+*/
+                if (tx_state.tx_size == 0)
+                {
+                    tx_buffer.timestamp = ts[TS_UPDATE];
+                    tx_buffer.speed = pid.speed;
+                    tx_buffer.acc   = pid.acc;
+                    tx_buffer.target = pid.f_target;
+                    tx_buffer.filtered_target = f_target_filtered;
+                    tx_buffer.measure = pid.f_measure;
+                    tx_buffer.output = pid.x;
+
+                    tx_buffer.hdr.crc = protocolCrc((uint8_t*)&tx_buffer,sizeof(pid_debug));
+                    
+                    uart_rs232_buffer_tx(&tx_state,sizeof(pid_debug));
+                }
+
                 ts_stop(&ts[TS_DURATION]);
                 period_latest = ts[TS_DURATION];
-                regs->freq_hz_latest = ts_cycles_to_freq(period_latest);
-
-                //if (debug == 1)
-                //    print_int((int)ts,1);       
+                regs->freq_hz_latest = ts_cycles_to_freq(period_latest);    
   
             }
         } else {
@@ -334,18 +357,18 @@ int pid_main(void* data)
                 case 'r':
                     // reset the current module
                     return 0;
-
+/*
                 case 'e':
                     pid_stop(&pid,regs);
 
-                    jtaguart_puts("----- PID DISABLED ----\n");
+                    //jtaguart_puts("----- PID DISABLED ----\n");
                     break;
 
                 case 'E':
                     pid_start(&pid,regs);
-                    jtaguart_puts("----- PID ENABLED ----\n");
+                    //jtaguart_puts("----- PID ENABLED ----\n");
                     break;
-
+*/
                 case 'p':
                     jtaguart_puts("----- PID Internals ----\n");
                     if (regs->arg[0] == 0)
@@ -369,7 +392,7 @@ int pid_main(void* data)
                     print_float(pid.saturated,1);
                     print_float(pid.x,1);
                     print_int(period_latest,1);
-                case 'd':
+/*                case 'd':
                     if (debug)
                         debug--;
                     break;
@@ -436,9 +459,12 @@ int pid_main(void* data)
                     else
                         jtaguart_puts("Output normal\n");                                   
                     break;
+*/
 
             }
+
         }
+
 	}
 }
 

@@ -21,6 +21,32 @@ void uart_rs232_tx(uint8_t data);
 
 
 
+typedef struct {
+    uint8_t*    buffer;
+    uint16_t    buffer_size;
+    uint16_t    tx_index;
+    uint16_t    tx_size;
+} __attribute__((packed)) uart_tx_state;
+
+
+void uart_rs232_buffer_init(uart_tx_state* state, uint8_t* buffer, uint16_t buffer_size);
+void uart_rs232_buffer_tx(uart_tx_state* state, uint16_t size);
+void uart_rs232_buffer_tx_process(uart_tx_state* state);
+
+
+#define PROTOCOL_FANION		0xA5
+
+typedef struct {
+    uint8_t     fanion;
+    uint16_t    size;
+    uint16_t    crc; // sum des data + id
+    uint16_t    id;
+} __attribute__((packed)) ProtocolHeader;
+
+uint16_t protocolCrc(uint8_t *msg, uint16_t size);
+
+
+
 void ts_start(uint32_t *ts);
 void ts_stop(uint32_t *ts);
 uint32_t ts_freq_to_cycles(uint16_t freq_hz);

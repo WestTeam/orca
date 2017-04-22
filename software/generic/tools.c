@@ -3,7 +3,7 @@
  #include <stdint.h>
  #include <limits.h>
 
-// #include "tools.h"
+ #include "tools.h"
 
 
 volatile int* uart_jtag = (volatile int*)(0x01000400);
@@ -84,6 +84,68 @@ void uart_rs232_tx(uint8_t data)
     } while (1);
 
 }
+
+void uart_rs232_buffer_init(uart_tx_state* state, uint8_t* buffer, uint16_t buffer_size)
+{
+    state->buffer = buffer;
+    state->buffer_size = buffer_size;
+    state->tx_index = 0;
+    state->tx_size = 0;
+}
+
+void uart_rs232_buffer_tx(uart_tx_state* state, uint16_t size)
+{
+    state->tx_size = size;
+    if (size > state->buffer_size)
+        state->tx_size = state->buffer_size;
+    state->tx_index = 0;
+}
+
+void uart_rs232_buffer_tx_process(uart_tx_state* state)
+{
+    if (state->tx_size != 0)
+    {
+        uint32_t status = uart_rs232[UART_RS232_REG_STATUS];
+        
+        if (status & UART_RS232_REG_STATUS_TRDY_MASK)
+        {
+            uart_rs232[UART_RS232_REG_TX_DATA] = (uint32_t)(state->buffer[state->tx_index++]);
+            if (state->tx_index >= state->tx_size)
+            {
+                state->tx_index = 0;
+                state->tx_size = 0;
+            }
+        }        
+    }
+}
+
+
+
+uint16_t protocolCrc(uint8_t *msg, uint16_t size)
+{
+	uint16_t crc = 0;
+	while( --size>4 )
+		crc += msg[size];
+	return crc;
+}//protocolCrc
+/*
+
+void i2c_master_configure(void)
+{
+// enable
+   IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,ALT_AVALON_I2C_CTRL_EN_MSK,ALT_AVALON_I2C_CTRL_EN_MSK);
+// disable
+   IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,0,ALT_AVALON_I2C_CTRL_EN_MSK);
+
+    IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,(cfg->speed_mode) << ALT_AVALON_I2C_CTRL_BUS_SPEED_OFST,ALT_AVALON_I2C_CTRL_BUS_SPEED_MSK);
+
+    IOWR_ALT_AVALON_I2C_SCL_HIGH(i2c_dev->i2c_base,cfg->scl_hcnt);
+    IOWR_ALT_AVALON_I2C_SCL_LOW(i2c_dev->i2c_base,cfg->scl_lcnt);
+    IOWR_ALT_AVALON_I2C_SDA_HOLD(i2c_dev->i2c_base,cfg->sda_cnt);
+
+}
+*/
+
 
 
 

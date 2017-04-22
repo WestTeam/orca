@@ -71,28 +71,6 @@ typedef struct odo_state
 
 typedef struct odo_data
 {
-/*
-    // INPUT
-    uint16_t c_qei_latest[2];
-    uint16_t m_qei_latest[2];
-
-    // INTERNALS
-    int32_t  c_qei_sum[2]; // sum from the init
-    int32_t  m_qei_sum[2];
-    int32_t  c_qei_sum_latest[2]; // latest processed value for position
-    int32_t  m_qei_sum_latest[2];
-
-    // CONFIGS
-    wheel_config_t c_wheel;
-    wheel_config_t m_wheel;
-
-    // OUTPUT RAW
-    float c_dist_sum;
-    float m_dist_sum;
-
-    float c_angle_sum;
-    float m_angle_sum;
-*/
     odo_state_t cs;
     odo_state_t ms;
 
@@ -205,11 +183,25 @@ float rad_mod_pi(float teta)
     return ret;
 }
 
+typedef struct {
+    ProtocolHeader hdr;
+    uint32_t timestamp; // 1 = 20ns
+    // 0 = Left, 1 = Right
+    int32_t c_qei_sum[2]; // wheel encoder 
+    int32_t m_qei_sum[2]; // motor encoder
+    float x;
+    float y;
+    float teta_rad;
+} __attribute__((packed)) odo_debug;
+
 
 int odometry_main(void* data)
 {
     odo_mapping_t* regs = (odo_mapping_t*)data;
     odo_data_t odo;
+
+    uart_tx_state tx_state;
+    odo_debug tx_buffer;
 
     uint32_t ts[2];
     #define TS_UPDATE 0
@@ -230,12 +222,23 @@ int odometry_main(void* data)
 
     uart_rs232_configure(50000000/1000000);
 
+    uart_rs232_buffer_init(&tx_state,(uint8_t*)&tx_buffer,sizeof(tx_buffer));
+
+    
+    tx_buffer.hdr.fanion = PROTOCOL_FANION;
+    tx_buffer.hdr.size = sizeof(odo_debug);
+    tx_buffer.hdr.crc = 0;
+    tx_buffer.hdr.id = 0;
+
+    
+    
+
     // odometry v2;
     for(;;) {
 
         //uart_rs232_tx('a');
-        //uart_rs232_tx('b');
 
+        uart_rs232_buffer_tx_process(&tx_state);
 
         // update motor encoders 
         odo_update_state(&odo.ms,&regs->m_qei_value[0],&regs->odo_sum_m_distance,&regs->odo_sum_m_angle,0);
@@ -305,6 +308,19 @@ int odometry_main(void* data)
                     odo.cs.qei_sum_latest[0] = odo.cs.qei_sum[0];
                     odo.cs.qei_sum_latest[1] = odo.cs.qei_sum[1];
 
+                    tx_buffer.timestamp = ts[TS_UPDATE];
+                    tx_buffer.c_qei_sum[0] = odo.cs.qei_sum[0];
+                    tx_buffer.c_qei_sum[1] = odo.cs.qei_sum[1];
+                    tx_buffer.m_qei_sum[0] = odo.ms.qei_sum[0];
+                    tx_buffer.m_qei_sum[1] = odo.ms.qei_sum[1];
+                    tx_buffer.x = odo.x;
+                    tx_buffer.y = odo.y;
+                    tx_buffer.teta_rad = odo.cs.angle_sum;
+
+                    tx_buffer.hdr.crc = protocolCrc((uint8_t*)&tx_buffer,sizeof(odo_debug));
+                    
+                    uart_rs232_buffer_tx(&tx_state,sizeof(odo_debug));
+
 
                     ts_stop(&ts[TS_DURATION]);
                     period_latest = ts[TS_DURATION];
@@ -332,27 +348,27 @@ int odometry_main(void* data)
             {
 
                 case 'p':
-                    jtaguart_puts("----- Motor  Wheel ----\n");
-                    jtaguart_puts("QEI VALUE:\n");
+                    jtaguart_puts("M W\n");
+                    jtaguart_puts("QEI:\n");
                     print_int((int32_t)odo.ms.qei_latest[0],1);
                     print_int((int32_t)odo.ms.qei_latest[1],1);
                     jtaguart_puts("QEI M SUM:\n");
                     print_int((int32_t)odo.ms.qei_sum[0],1);
                     print_int((int32_t)odo.ms.qei_sum[1],1);
-                    jtaguart_puts("Distance:\n");
+                    jtaguart_puts("D:\n");
                     print_float(odo.ms.dist_sum,1);
-                    jtaguart_puts("Angle:\n");
+                    jtaguart_puts("A:\n");
                     print_float(odo.ms.angle_sum,1);
-                    jtaguart_puts("----- Coding Wheel ----\n");
-                    jtaguart_puts("QEI VALUE:\n");
+                    jtaguart_puts("C W\n");
+                    jtaguart_puts("QEI:\n");
                     print_int((int32_t)odo.cs.qei_latest[0],1);
                     print_int((int32_t)odo.cs.qei_latest[1],1);
                     jtaguart_puts("QEI M SUM:\n");
                     print_int((int32_t)odo.cs.qei_sum[0],1);
                     print_int((int32_t)odo.cs.qei_sum[1],1);
-                    jtaguart_puts("Distance:\n");
+                    jtaguart_puts("D:\n");
                     print_float(odo.cs.dist_sum,1);
-                    jtaguart_puts("Angle:\n");
+                    jtaguart_puts("A:\n");
                     print_float(odo.cs.angle_sum,1);
                     jtaguart_puts("--------- POS --------\n");
                     jtaguart_puts("X/Y/Angle(rad)/Angle(Deg):\n");

@@ -150,7 +150,7 @@ typedef struct trajectory_data
 } trajectory_data_t;
 
 
-void _trajectory_init(trajectory_mapping_t* regs, trajectory_data_t* data)
+void _trajectory_init(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     // init structures
     memset((void*)data,0,sizeof(*data));
@@ -166,7 +166,7 @@ void _trajectory_init(trajectory_mapping_t* regs, trajectory_data_t* data)
 }
 
 
-void trajectory_update_position(trajectory_mapping_t* regs, trajectory_data_t* data)
+void trajectory_update_position(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     data->rs.virtual_encoders.distance = regs->odo.sum_m_distance;
     data->rs.virtual_encoders.angle    = regs->odo.sum_m_angle;
@@ -211,7 +211,7 @@ void trajectory_update_position(trajectory_mapping_t* regs, trajectory_data_t* d
 
 
 
-void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
+void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     uint8_t cmd_id = regs->cmd_id;
 
@@ -350,7 +350,7 @@ void trajectory_update_cmd(trajectory_mapping_t* regs, trajectory_data_t* data)
 }
 
 
-void trajectory_update_target(trajectory_mapping_t* regs, trajectory_data_t* data)
+void trajectory_update_target(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     
     //regs->pid.distance.enable = 1;
@@ -371,7 +371,7 @@ void trajectory_update_target(trajectory_mapping_t* regs, trajectory_data_t* dat
 
 int trajectory_main(void* data)
 {
-    trajectory_mapping_t* regs = (trajectory_mapping_t*)data;
+    volatile trajectory_mapping_t* regs = (trajectory_mapping_t*)data;
     trajectory_data_t traj;
 
     // DEBUG
@@ -453,7 +453,7 @@ int trajectory_main(void* data)
         // update output to send target / config to PIDs
         trajectory_update_target(regs,&traj);
 
-
+#if 0
         if (chr != 0)
         {
             switch (chr)
@@ -486,7 +486,7 @@ int trajectory_main(void* data)
                     print_float(traj.trj.a_win_rad,1);
                     print_float(traj.trj.a_start_rad,1);
 
-
+/*
                     jtaguart_puts("Dist - Speed/Acc/Target\n");  
                     print_float(traj.qr_d.var_1st_ord_pos,1);
                     print_float(traj.qr_d.var_2nd_ord_pos,1);
@@ -496,6 +496,7 @@ int trajectory_main(void* data)
                     print_float(traj.qr_a.var_1st_ord_pos,1);
                     print_float(traj.qr_a.var_2nd_ord_pos,1);
                     print_float(traj.cs_a.consign_value,1);
+*/
 
                     break;
 
@@ -506,7 +507,8 @@ int trajectory_main(void* data)
 
             }
             chr = 0;
-        }        
+        }  
+#endif      
 
 
     }

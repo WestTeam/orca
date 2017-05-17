@@ -76,7 +76,7 @@ void pid_init(pid_data_t* data)
 
 
 
-void pid_stop(pid_data_t* data,pid_mapping_t* regs)
+void pid_stop(pid_data_t* data,volatile pid_mapping_t* regs)
 {
     data->enabled = 0;                    
     data->x_integral = 0;
@@ -87,7 +87,7 @@ void pid_stop(pid_data_t* data,pid_mapping_t* regs)
 }
 
 
-void pid_update_input(pid_data_t* data,pid_mapping_t* regs)
+void pid_update_input(pid_data_t* data,volatile pid_mapping_t* regs)
 {
     
     if (regs->arg[0] == 0)
@@ -122,7 +122,7 @@ void pid_update_input(pid_data_t* data,pid_mapping_t* regs)
 
 
 
-void pid_start(pid_data_t* data,pid_mapping_t* regs)
+void pid_start(pid_data_t* data,volatile pid_mapping_t* regs)
 {
     data->enabled = 1;
     pid_update_input(data,regs);
@@ -131,7 +131,7 @@ void pid_start(pid_data_t* data,pid_mapping_t* regs)
 }
 
 
-void pid_update_config(pid_data_t* data,pid_mapping_t* regs)
+void pid_update_config(pid_data_t* data,volatile pid_mapping_t* regs)
 {
     
     uint8_t enable = regs->enable;
@@ -231,7 +231,7 @@ void pid_processing(pid_data_t* data, float target)
 
 }
 
-void pid_update_output(pid_data_t* data,pid_mapping_t* regs)
+void pid_update_output(pid_data_t* data,volatile pid_mapping_t* regs)
 {
     if (data->inverted)
         regs->output = -(int32_t)data->x;
@@ -254,7 +254,7 @@ typedef struct {
 
 int pid_main(void* data)
 {
-    pid_mapping_t* regs = (pid_mapping_t*)data;
+    volatile pid_mapping_t* regs = (pid_mapping_t*)data;
     pid_data_t pid;
     uart_tx_state tx_state;
     pid_debug tx_buffer;

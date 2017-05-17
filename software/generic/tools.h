@@ -3,7 +3,6 @@
  #include <stdint.h>
  #include <limits.h>
 
-// #include "tools.h"
 
 
 #define ABS(x) __fabsf(x)

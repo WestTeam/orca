@@ -88,7 +88,7 @@ typedef struct odo_data
 } odo_data_t;
 
 
-void odometry_init(odo_mapping_t* regs, odo_data_t* data)
+void odometry_init(volatile odo_mapping_t* regs, odo_data_t* data)
 {
     // init structures
     memset((void*)data,0,sizeof(*data));
@@ -116,7 +116,7 @@ void odometry_init(odo_mapping_t* regs, odo_data_t* data)
     
 }
 
-void odo_update_state(odo_state_t* state,uint16_t* regs_qei, float* regs_sum_dist, float *regs_sum_angle,uint8_t inv)
+void odo_update_state(odo_state_t* state,volatile uint16_t* regs_qei, volatile float* regs_sum_dist, volatile float *regs_sum_angle,uint8_t inv)
 {
     uint16_t qei[2];
 
@@ -197,7 +197,7 @@ typedef struct {
 
 int odometry_main(void* data)
 {
-    odo_mapping_t* regs = (odo_mapping_t*)data;
+    volatile odo_mapping_t* regs = (odo_mapping_t*)data;
     odo_data_t odo;
 
     uart_tx_state tx_state;
@@ -210,13 +210,6 @@ int odometry_main(void* data)
     uint32_t period_latest = 0;
 
     odometry_init(regs,&odo);
-    print_int(regs->m_qei_value[0],1);
-    print_int(odo.ms.qei_latest[0],1);
-    print_int(odo.ms.qei_latest[1],1);
-    print_int(odo.cs.qei_latest[0],1);
-    print_int(odo.cs.qei_latest[1],1);
-
-
 
     ts_start(&ts[TS_UPDATE]);
 
@@ -230,7 +223,9 @@ int odometry_main(void* data)
     tx_buffer.hdr.crc = 0;
     tx_buffer.hdr.id = 0;
 
-    
+    //i2c_master_configure();
+    //i2c_test();
+
     
 
     // odometry v2;
@@ -387,97 +382,9 @@ int odometry_main(void* data)
                     return 0;
 
             }
-        }        
+        }    
+    
 
-
-//        print_int(regs->m_qei_value[0],1);
-//        print_int(regs->m_qei_value[1],1);
-//        print_int(regs->c_qei_value[0],1);
-//        print_int(regs->c_qei_value[1],1);
-
-/*
-
-        qei0 = regs->c_qei_value[0];
-        qei1 = regs->c_qei_value[1];
-
-        if (qei0_last != qei0 || qei1_last != qei1)
-        {
-
-            ts_start(&ts);
-
-            jtaguart_puts("Odo Regs:");
-            print_float(regs->m_wheel_axe_mm,1);
-            print_float(regs->m_wheel_mm_per_tick[0],1);
-            print_float(regs->m_wheel_mm_per_tick[1],1);
-
-            print_float(regs->c_wheel_axe_mm,1);
-            print_float(regs->c_wheel_mm_per_tick[0],1);
-            print_float(regs->c_wheel_mm_per_tick[1],1);
-
-            //print_int(regs->m_qei_value[0],1);
-            //print_int(regs->m_qei_value[1],1);
-            //print_int(regs->c_qei_value[0],1);
-            //print_int(regs->c_qei_value[1],1);
-
-
-            left_cm_per_tick  = regs->c_wheel_mm_per_tick[0]*M_PI/(1024.0*728.0/45.0)/10.0; //32
-            right_cm_per_tick = regs->c_wheel_mm_per_tick[1]*M_PI/(1024.0*728.0/45.0)/10.0;
-            entrax_cm = regs->c_wheel_axe_mm/10.0;
-
-            qei0_diff = qei0-qei0_last;
-            qei1_diff = -(qei1-qei1_last);
-
-            qei0_last = qei0;
-            qei1_last = qei1;
-
-            print_float(regs->c_wheel_axe_mm,1);
-            print_float(regs->c_wheel_mm_per_tick[0],1);
-            print_float(regs->c_wheel_mm_per_tick[1],1);
-
-            
-            print_int(qei0_diff,0);
-            jtaguart_putc(':');
-            print_int(qei1_diff,1);
-            
-
-            {
-	            float diff_left_cm = (float)qei0_diff*left_cm_per_tick;
-	            float diff_right_cm = (float)qei1_diff*right_cm_per_tick;
-
-                float distance = (diff_left_cm+diff_right_cm)/2.0;
-                float angle    = (diff_right_cm-diff_left_cm)/entrax_cm;
-
-		        a_rad+=angle;
-		        x = x + __cosf(a_rad) * (distance) ;
-		        y = y + __sinf(a_rad) * (distance) ;
-
-	            if (a_rad < -M_PI)
-		            a_rad += (M_PI*2);
-	            else if (a_rad > (M_PI))
-		            a_rad -= (M_PI*2);
-
-                a_deg = (int16_t)(DEG(a_rad));
-
-                regs->odo_pos_valid = 0;
-                regs->odo_pos_id = id_pos++;
-                regs->odo_pos_teta = a_deg;
-                regs->odo_pos_x = (int16_t)x;
-                regs->odo_pos_y = (int16_t)y;
-                regs->odo_pos_valid = 1;
-
-                ts_stop(&ts);
-                print_int((int)ts,1);    
-                
-                print_float(x,0);
-                jtaguart_putc(':');
-                print_float(y,0);
-                jtaguart_putc(':');
-                print_float(a_rad,0);
-                jtaguart_putc(':');
-                print_int(a_deg,1);                
-
-            }
-        }*/
     }
 
     return 0;

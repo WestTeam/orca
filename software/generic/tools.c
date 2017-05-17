@@ -6,11 +6,9 @@
  #include "tools.h"
 
 
-volatile int* uart_jtag = (volatile int*)(0x01000400);
+volatile uint32_t* uart_jtag = (volatile uint32_t*)(0x01000400);
 
-volatile int* uart_rs232 = (volatile int*)(0x01000420);
-
-volatile int* i2c_master = (volatile int*)(0x01000440);
+volatile uint32_t* uart_rs232 = (volatile uint32_t*)(0x01000420);
 
 
 inline uint32_t get_time()
@@ -128,24 +126,6 @@ uint16_t protocolCrc(uint8_t *msg, uint16_t size)
 		crc += msg[size];
 	return crc;
 }//protocolCrc
-/*
-
-void i2c_master_configure(void)
-{
-// enable
-   IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,ALT_AVALON_I2C_CTRL_EN_MSK,ALT_AVALON_I2C_CTRL_EN_MSK);
-// disable
-   IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,0,ALT_AVALON_I2C_CTRL_EN_MSK);
-
-    IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,(cfg->speed_mode) << ALT_AVALON_I2C_CTRL_BUS_SPEED_OFST,ALT_AVALON_I2C_CTRL_BUS_SPEED_MSK);
-
-    IOWR_ALT_AVALON_I2C_SCL_HIGH(i2c_dev->i2c_base,cfg->scl_hcnt);
-    IOWR_ALT_AVALON_I2C_SCL_LOW(i2c_dev->i2c_base,cfg->scl_lcnt);
-    IOWR_ALT_AVALON_I2C_SDA_HOLD(i2c_dev->i2c_base,cfg->sda_cnt);
-
-}
-*/
-
 
 
 
@@ -187,22 +167,6 @@ uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period)
         return 0;
 }
 
-
-/*
-int32_t int24_to_int32(int32_t data)
-{
-    int32_t ret;
-    if (((data >> 23)&0x1) == 0)
-    {
-        ret = data & 0x00ffffff;
-    }
-    else
-    {
-        data &= 0x007fffff;
-        ret = 0xff800000 | (data);
-    }    
-    return ret;
-}*/
 
 
 /*

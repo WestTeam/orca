@@ -22,10 +22,6 @@
 void i2c_master_configure(volatile uint32_t *base);
 void i2c_master_enable(volatile uint32_t *base, uint8_t enable);
 
-uint8_t i2c_master_cmd_write(volatile uint32_t *base,uint8_t value, uint8_t issue_restart, uint8_t issue_stop);
-uint8_t i2c_master_cmd_read(volatile uint32_t *base);
-
-
 uint8_t i2c_master_tx(volatile uint32_t *base,
                                uint8_t   addr,
                                uint8_t  *buffer,

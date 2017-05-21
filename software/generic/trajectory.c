@@ -85,10 +85,12 @@ typedef struct trajectory_mapping
             float y; // IN
         } order_pos;        
 
-        struct order_d
+        struct order_ad
         {
-            float distance; // IN 
-        } order_d;
+            float angle_deg; // IN 
+            float distance; // IN
+            uint8_t correction; // if 0, coding wheel ignored 
+        } order_ad;
 
     } cmd;
 
@@ -232,7 +234,9 @@ void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_
         float x         = regs->cmd.order_pos.x;
         float y         = regs->cmd.order_pos.y;
 
-        float distance  = regs->cmd.order_d.distance;
+        float distance  = regs->cmd.order_ad.distance;
+        float angle_deg = regs->cmd.order_ad.angle_deg;
+        uint8_t correction = regs->cmd.order_ad.correction;
 
         // we check again the pos_id is the same as well as valid, to make sure the data we read is ok.
         if (regs->cmd_id == cmd_id && regs->cmd_valid == 1)
@@ -280,25 +284,25 @@ void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_
                             trajectory_hardstop(&data->trj);
                             break;
                         case TRAJ_D_REL:
-                            trajectory_d_rel(&data->trj,distance);
+                            trajectory_d_rel(&data->trj,distance,correction);
                             break;
                         case TRAJ_ONLY_D_REL:
-                            trajectory_only_d_rel(&data->trj,distance);
+                            trajectory_only_d_rel(&data->trj,distance,correction);
                             break;
                         case TRAJ_A_REL:
-                            trajectory_a_rel(&data->trj,teta);
+                            trajectory_a_rel(&data->trj,angle_deg,correction); // DEG
                             break;
                         case TRAJ_A_ABS:
-                            trajectory_a_abs(&data->trj,teta);
+                            trajectory_a_abs(&data->trj,angle_deg,correction); // DEG
                             break;
                         case TRAJ_ONLY_A_REL:
-                            trajectory_only_a_rel(&data->trj,teta);
+                            trajectory_only_a_rel(&data->trj,angle_deg,correction); // DEG
                             break;
                         case TRAJ_ONLY_A_ABS:
-                            trajectory_only_a_abs(&data->trj,distance);
+                            trajectory_only_a_abs(&data->trj,distance,correction); // DEG
                             break;
                         case TRAJ_D_A_REL:
-                            trajectory_d_a_rel(&data->trj,distance,x);
+                            trajectory_d_a_rel(&data->trj,distance,angle_deg,correction); // DEG
                             break;
                         case TRAJ_TURNTO_XY:
                             trajectory_turnto_xy(&data->trj,x,y);
@@ -316,7 +320,7 @@ void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_
                             trajectory_goto_backward_xy_abs(&data->trj,x,y);
                             break;
                         case TRAJ_GOTO_D_A_REL:
-                            trajectory_goto_d_a_rel(&data->trj,distance,x);
+                            trajectory_goto_d_a_rel(&data->trj,distance,angle_deg,correction); //DEG
                             break;
                         case TRAJ_GOTO_XY_REL:
                             trajectory_goto_xy_rel(&data->trj,x,y);

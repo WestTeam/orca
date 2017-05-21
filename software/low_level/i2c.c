@@ -194,9 +194,9 @@ uint8_t i2c_master_cmd_write(volatile uint32_t *base,uint8_t value, uint8_t issu
         if (timeout >= 100000)
         {
             int i;
-            jtaguart_puts("timeout:\n");
+            /*jtaguart_puts("timeout:\n");
             for (i=0;i<16;i++)
-                print_int(IORD(base,i),1);
+                print_int(IORD(base,i),1);*/
 
             return 1;
         }
@@ -210,16 +210,25 @@ uint8_t i2c_master_cmd_write(volatile uint32_t *base,uint8_t value, uint8_t issu
 }
 
 
-uint8_t i2c_master_cmd_read(volatile uint32_t *base)
+uint8_t i2c_master_cmd_read(volatile uint32_t *base, uint8_t *data)
 {
+    uint8_t status = 0;
+    uint32_t timeout = 100000;
+
 
     while (IORD(base,ALT_AVALON_I2C_RX_DATA_FIFO_LVL_REG) == 0)
     {
-        delay(10);
+      if (timeout<10) delay(10000);
+      if (--timeout == 0)
+      {
+        status = 1;
+        break;
+      }
     }
 
-    return (uint8_t)IORD(base,ALT_AVALON_I2C_RX_DATA_REG);
-       
+    *data = (uint8_t)IORD(base,ALT_AVALON_I2C_RX_DATA_REG);
+
+    return status;       
 }
 
 
@@ -336,7 +345,7 @@ uint8_t i2c_master_receive(volatile uint32_t *base,
             bytes_written++;
             if (status == 0)
             {
-               *buffer = i2c_master_cmd_read(base);
+               status = i2c_master_cmd_read(base, buffer);
                buffer+=temp_bytes_read;
                bytes_read+=temp_bytes_read;
             }
@@ -351,7 +360,7 @@ uint8_t i2c_master_receive(volatile uint32_t *base,
     
     while ((bytes_read < size) && (status==0)) 
     {
-        *buffer=i2c_master_cmd_read(base);
+        status = i2c_master_cmd_read(base, buffer);
         buffer++;
         bytes_read++;
     }

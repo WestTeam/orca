@@ -116,6 +116,37 @@ void odometry_init(volatile odo_mapping_t* regs, odo_data_t* data)
     
 }
 
+
+void odometry_update_config(odo_data_t* data,volatile odo_mapping_t* regs)
+{
+    uint8_t i;
+
+    if (regs->m_wheel_axe_mm != 0.0 && regs->m_wheel_axe_mm != data->ms.wheel.axe_mm)
+    {
+        data->ms.wheel.axe_mm = regs->m_wheel_axe_mm;
+        data->ms.wheel.axe_mm_inv = 1.0/regs->m_wheel_axe_mm;
+    }
+    for (i=0;i<2;i++)
+    {
+        if (regs->m_wheel_mm_per_tick[i] != 0.0 && regs->m_wheel_mm_per_tick[i] != data->ms.wheel.mm_per_tick[i])
+            data->ms.wheel.mm_per_tick[i] = regs->m_wheel_mm_per_tick[i];
+    }
+
+    if (regs->c_wheel_axe_mm != 0.0 && regs->c_wheel_axe_mm != data->cs.wheel.axe_mm)
+    {
+        data->cs.wheel.axe_mm = regs->c_wheel_axe_mm;
+        data->cs.wheel.axe_mm_inv = 1.0/regs->c_wheel_axe_mm;
+    }
+    for (i=0;i<2;i++)
+    {
+        if (regs->c_wheel_mm_per_tick[i] != 0.0 && regs->c_wheel_mm_per_tick[i] != data->cs.wheel.mm_per_tick[i])
+            data->cs.wheel.mm_per_tick[i] = regs->c_wheel_mm_per_tick[i];
+    }
+}
+
+
+
+
 void odo_update_state(odo_state_t* state,volatile uint16_t* regs_qei, volatile float* regs_sum_dist, volatile float *regs_sum_angle,uint8_t inv)
 {
     uint16_t qei[2];
@@ -280,7 +311,9 @@ int odometry_main(void* data)
                     float alpha;
 
                     dist = ((float)diff[0]*odo.cs.wheel.mm_per_tick[0] + (float)diff[1]*odo.cs.wheel.mm_per_tick[1])*0.5;
-                    alpha = odo.teta_rad + (dist)*odo.cs.wheel.axe_mm_inv;
+                    
+                    alpha = odo.teta_rad;
+                    alpha+= ((float)diff[1]*odo.cs.wheel.mm_per_tick[1] - (float)diff[0]*odo.cs.wheel.mm_per_tick[0])*0.5*odo.cs.wheel.axe_mm_inv;
                     alpha = rad_mod_pi(alpha);
 
                     odo.x += dist * __cosf(alpha);
@@ -316,6 +349,7 @@ int odometry_main(void* data)
                     
                     uart_rs232_buffer_tx(&tx_state,sizeof(odo_debug));
 
+                    odometry_update_config(&odo,regs);
 
                     ts_stop(&ts[TS_DURATION]);
                     period_latest = ts[TS_DURATION];

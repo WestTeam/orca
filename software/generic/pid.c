@@ -255,6 +255,8 @@ typedef struct {
 int pid_main(void* data)
 {
     volatile pid_mapping_t* regs = (pid_mapping_t*)data;
+    memset((void*)regs,0,sizeof(*regs));
+
     pid_data_t pid;
     uart_tx_state tx_state;
     pid_debug tx_buffer;
@@ -370,6 +372,7 @@ int pid_main(void* data)
                     break;
 */
                 case 'p':
+/*
                     jtaguart_puts("----- PID Internals ----\n");
                     if (regs->arg[0] == 0)
                     {
@@ -392,6 +395,9 @@ int pid_main(void* data)
                     print_float(pid.saturated,1);
                     print_float(pid.x,1);
                     print_int(period_latest,1);
+*/
+                    break;
+
 /*                case 'd':
                     if (debug)
                         debug--;

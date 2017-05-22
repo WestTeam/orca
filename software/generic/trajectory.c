@@ -99,16 +99,8 @@ typedef struct trajectory_mapping
     uint8_t traj_blocked; // OUT
     uint8_t traj_in_window; // OUT
 
-
-
-
-
     //IN = 13
     //OUT = 8
-
-
-
-
 
 
 } __attribute__((packed)) trajectory_mapping_t;
@@ -169,7 +161,7 @@ void _trajectory_init(volatile trajectory_mapping_t* regs, trajectory_data_t* da
 
 
 void trajectory_update_position(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
-{
+{    
     data->rs.virtual_encoders.distance = regs->odo.sum_m_distance;
     data->rs.virtual_encoders.angle    = regs->odo.sum_m_angle;
 
@@ -299,7 +291,7 @@ void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_
                             trajectory_only_a_rel(&data->trj,angle_deg,correction); // DEG
                             break;
                         case TRAJ_ONLY_A_ABS:
-                            trajectory_only_a_abs(&data->trj,distance,correction); // DEG
+                            trajectory_only_a_abs(&data->trj,angle_deg,correction); // DEG
                             break;
                         case TRAJ_D_A_REL:
                             trajectory_d_a_rel(&data->trj,distance,angle_deg,correction); // DEG
@@ -357,12 +349,10 @@ void trajectory_update_cmd(volatile trajectory_mapping_t* regs, trajectory_data_
 void trajectory_update_target(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
 {
     
-    //regs->pid.distance.enable = 1;
     regs->pid.distance.speed = data->qr_d.var_1st_ord_pos;//data->trj.d_speed;
     regs->pid.distance.acc = data->qr_d.var_2nd_ord_pos;//data->trj.d_acc;
     regs->pid.distance.target = data->cs_d.consign_value;
 
-    //regs->pid.angle.enable = 1;
     regs->pid.angle.speed = data->qr_a.var_1st_ord_pos;//data->trj.a_speed;
     regs->pid.angle.acc = data->qr_a.var_2nd_ord_pos;//data->trj.a_acc;
     regs->pid.angle.target = data->cs_a.consign_value;
@@ -370,6 +360,49 @@ void trajectory_update_target(volatile trajectory_mapping_t* regs, trajectory_da
     regs->traj_state = data->trj.state;
 
     regs->traj_in_window = trajectory_in_window(&data->trj,data->trj.d_win,data->trj.a_win_rad);
+}
+
+void trajectory_check_blocked(volatile trajectory_mapping_t* regs, trajectory_data_t* data)
+{
+    static float prev_sum_m_distance = 0.0;
+//    static float prev_sum_m_angle = 0.0;
+    static float prev_sum_c_distance = 0.0;
+//    static float prev_sum_c_angle = 0.0;
+    static uint16_t cnt = 0;
+    uint8_t blocked = 0;
+
+    float m_diff;
+    float c_diff;
+
+    cnt++;
+
+    if (cnt == 300)
+    {
+        cnt = 0;
+        blocked = 0;
+        if (regs->odo.sum_m_distance != prev_sum_m_distance)
+        {
+            m_diff = regs->odo.sum_m_distance - prev_sum_m_distance;
+            c_diff = (regs->odo.sum_c_distance - prev_sum_c_distance)*10.0; 
+            //print_float(m_diff,0);
+            //jtaguart_puts("\t");
+            //print_float(c_diff,1);
+
+            if (fabs(m_diff) > fabs(c_diff) && fabs(m_diff) > 5.0)
+            {
+                blocked = 1;
+            }
+        }
+
+        // we store the values for future use
+        prev_sum_m_distance = regs->odo.sum_m_distance;
+//        prev_sum_m_angle    = regs->odo.sum_m_angle;
+
+        prev_sum_c_distance = regs->odo.sum_c_distance;
+//        prev_sum_c_angle    = regs->odo.sum_c_angle;
+
+        regs->traj_blocked = blocked;
+    }
 }
 
 
@@ -389,9 +422,9 @@ int trajectory_main(void* data)
     uint32_t period_latest = 0;
 
     
-    print_float((float)regs->odo.pos_teta,1);
-    traj.pos.pos_d.a = ((float)regs->odo.pos_teta) * (M_PI / 1800.0);
-    print_float(traj.pos.pos_d.a,1);
+    //print_float((float)regs->odo.pos_teta,1);
+    //traj.pos.pos_d.a = ((float)regs->odo.pos_teta) * (M_PI / 1800.0);
+    //print_float(traj.pos.pos_d.a,1);
 
     jtaguart_puts("Trajectory: Init\n");
 /*    print_int(sizeof(*regs),1);
@@ -437,6 +470,8 @@ int trajectory_main(void* data)
 
                     // processing
                     trajectory_manager_event((void*)&traj.trj);
+
+                    trajectory_check_blocked(regs,&traj);
 
                     ts_stop(&ts[TS_DURATION]);
                     period_latest = ts[TS_DURATION];

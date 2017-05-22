@@ -43,14 +43,20 @@ int main()
     uint8_t error = 0;
     jtaguart_puts("LL Init\n");
 
-    
+    uint8_t buf[2];
 
     uint16_t R,G,B,C;
 
 
-    delay(200000000);
+    //delay(200000000);
 
     i2c_init: i2c_master_configure(i2c_master_0);
+
+    //int i;
+    //buf[0] = 0xFF;
+    //for (i=0;i<4;i++)
+    //    i2c_master_tx(i2c_master_0,i,buf,2);
+
     error = i2c_color_init(i2c_master_0);
 
 
@@ -88,20 +94,23 @@ int main()
     char chr;
     uint32_t color_error_count = 0;
     uint32_t prox_error_count = 0;
+
     for (;;)
     {
-
-        error = i2c_color_get(i2c_master_0,&R,&G,&B,&C);
-        regs->R = R;
-        regs->G = G;
-        regs->B = B;
-        regs->C = C;
-
-        if (error == 0)
+        if (regs->adc_drdy)
         {
-            regs->color_valid = 1;
-        } else {
-            color_error_count++;
+            error = i2c_color_get(i2c_master_0,&R,&G,&B,&C);
+            regs->R = R;
+            regs->G = G;
+            regs->B = B;
+            regs->C = C;
+
+            if (error == 0)
+            {
+                regs->color_valid = 1;
+            } else {
+                color_error_count++;
+            }
         }
 
         error = i2c_proximity_get(i2c_master_1,dist);
@@ -119,7 +128,16 @@ int main()
             regs->dist_valid = 1;
             delay(1);
         }
-
+    
+        if (prox_error_count > 1000)
+        {
+            prox_error_count = 0;
+            // reset I2C 1
+            regs->adc_reset = 0;
+            delay(10000);
+            regs->adc_reset = 1;
+            i2c_proximity_init(i2c_master_1);
+        }
 
 
         chr = jtaguart_getchar();
@@ -129,6 +147,7 @@ int main()
             {
                 case 'p':
                     jtaguart_puts("----- DEBUG INFO ----\n");
+                    print_int(regs->adc_drdy,1);
                     print_int(color_error_count,1);
                     print_int(prox_error_count,1);
                     jtaguart_puts("G=");

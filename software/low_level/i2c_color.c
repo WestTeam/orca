@@ -71,6 +71,29 @@
 #define PRESCALER_64 0x06
 
 
+
+uint8_t i2c_color_get(volatile uint32_t *base,uint16_t *R,uint16_t *G, uint16_t *B, uint16_t *C)
+{
+    uint8_t i;
+    uint8_t buff[8];
+    uint8_t error = 0;
+ 
+    for (i=0;i<8;i++)
+    {
+        uint8_t addr = 0x90+i;
+
+        error += i2c_master_tx_rx(base,COLOR_SENSOR_ADDR,&addr,1,&buff[i],1);
+    }
+    
+    *G = (uint16_t)buff[1] << 8 | buff[0];
+    *R = (uint16_t)buff[3] << 8 | buff[2];
+    *B = (uint16_t)buff[5] << 8 | buff[4];
+    *C = (uint16_t)buff[7] << 8 | buff[6];
+
+    return error;
+}
+
+
 uint8_t i2c_color_init(volatile uint32_t *base)
 {
     uint8_t error=0;
@@ -113,32 +136,12 @@ uint8_t i2c_color_init(volatile uint32_t *base)
     error += i2c_master_tx(base,COLOR_SENSOR_ADDR,buf,2);
 
 
+    uint16_t test;
+    error += i2c_color_get(base,&test,&test,&test,test);
+
     return error;
 
 }
-
-uint8_t i2c_color_get(volatile uint32_t *base,uint16_t *R,uint16_t *G, uint16_t *B, uint16_t *C)
-{
-    uint8_t i;
-    uint8_t buff[8];
-    uint8_t error = 0;
- 
-    for (i=0;i<8;i++)
-    {
-        uint8_t addr = 0x90+i;
-
-        error += i2c_master_tx_rx(base,COLOR_SENSOR_ADDR,&addr,1,&buff[i],1);
-    }
-    
-    *G = (uint16_t)buff[1] << 8 | buff[0];
-    *R = (uint16_t)buff[3] << 8 | buff[2];
-    *B = (uint16_t)buff[5] << 8 | buff[4];
-    *C = (uint16_t)buff[7] << 8 | buff[6];
-
-    return error;
-}
-
-
 
 
 

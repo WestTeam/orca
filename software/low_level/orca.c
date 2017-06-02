@@ -129,7 +129,7 @@ int main()
             delay(1);
         }
     
-        if (prox_error_count > 1000)
+        if (prox_error_count > 2)
         {
             prox_error_count = 0;
             // reset I2C 1

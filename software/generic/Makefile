@@ -1,6 +1,6 @@
 all:
 
-INC=-Icvra-modules/modules/quadramp/ -Icvra-modules/modules/trajectory_manager/ -Icvra-modules/modules/position_manager/ -Icvra-modules/modules/control_system_manager/ -Icvra-modules/modules/math/vect2/ -Icvra-modules/modules/math/geometry/ -Icvra-modules/modules/robot_system/
+INC=-I./ -Icvra-modules/modules/quadramp/ -Icvra-modules/modules/trajectory_manager/ -Icvra-modules/modules/position_manager/ -Icvra-modules/modules/control_system_manager/ -Icvra-modules/modules/math/vect2/ -Icvra-modules/modules/math/geometry/ -Icvra-modules/modules/robot_system/
 
 
 AS_SRCS=crt.S

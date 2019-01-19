@@ -1,6 +1,6 @@
 all:
 
-INC=-I../generic
+INC=-I ./ -I../generic
 
 AS_SRCS=crt.S
 

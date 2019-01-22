@@ -4,3 +4,4 @@
 [submodule "software/generic/cvra-modules"]
 	path = software/generic/cvra-modules
 	url = https://github.com/drunkpony/cvra-modules
+        branch = master

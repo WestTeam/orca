@@ -176,6 +176,22 @@
    {
       datum _originalDeviceFamily
       {
+         value = "Cyclone IV E";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element system
+   {
+      datum _originalDeviceFamily
+      {
          value = "Cyclone V";
          type = "String";
       }
@@ -257,22 +273,6 @@
       datum _originalDeviceFamily
       {
          value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone IV E";
-         type = "String";
-      }
-   }
-   element system
-   {
-      datum _originalDeviceFamily
-      {
-         value = "Cyclone V";
          type = "String";
       }
    }
@@ -396,7 +396,7 @@
   <parameter name="avalonSpec" value="2.0" />
   <parameter name="clkFreq" value="50000000" />
   <parameter name="hubInstanceID" value="0" />
-  <parameter name="readBufferDepth" value="64" />
+  <parameter name="readBufferDepth" value="8" />
   <parameter name="readIRQThreshold" value="8" />
   <parameter name="simInputCharacterStream" value="" />
   <parameter name="simInteractiveOptions">NO_INTERACTIVE_WINDOWS</parameter>
@@ -473,7 +473,7 @@
   <parameter name="stopBits" value="1" />
   <parameter name="syncRegDepth" value="2" />
   <parameter name="useCtsRts" value="false" />
-  <parameter name="useEopRegister" value="true" />
+  <parameter name="useEopRegister" value="false" />
   <parameter name="useRelativePathForSimFile" value="false" />
  </module>
  <module

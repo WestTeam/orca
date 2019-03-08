@@ -2,3 +2,7 @@
 transcript
 *.elf
 *.dump
+*.qex
+software/low_level/obj
+software/low_level/generic
+software/generic/obj

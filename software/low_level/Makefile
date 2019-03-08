@@ -7,7 +7,7 @@ AS_SRCS=crt.S
 TARGETS=orca
 TARGET_C_SRCS=$(addsuffix .c,$(TARGETS))
 TARGET_C_OBJS=$(addprefix obj/,$(addsuffix .c.o,$(TARGETS)))
-C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, ../generic/tools i2c i2c_color i2c_proximity $(C_SRCS)))
+C_OBJ_FILES=$(addprefix obj/,$(addsuffix .c.o, ../generic/tools servo_ctrl $(C_SRCS)))
 S_OBJ_FILES=$(addprefix obj/,$(addsuffix .o, $(AS_SRCS)))
 
 CROSS_COMPILE=riscv32-unknown-elf-
@@ -15,9 +15,10 @@ CC=$(CROSS_COMPILE)gcc
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 ARCH=RV32IMXmxp
-CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -g -march=$(ARCH) $(INC) -MD -Wall -std=gnu99 -msoft-float -mmuldiv
-LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles
-
+#-fdata-sections -ffunction-sections 
+CFLAGS= -m32 -O2 -fno-delete-null-pointer-checks -fdata-sections -ffunction-sections  -g -march=$(ARCH) $(INC) -MD -Wall -Wno-strict-aliasing -std=gnu99 -msoft-float -mmuldiv
+LD_FLAGS= -m32 -march=$(ARCH) -static -nostartfiles -Wl,--gc-sections -Wl,--print-gc-sections
+# -Wl,--gc-sections -Wl,--print-gc-sections
 obj/:
 	mkdir -p obj/
 	mkdir -p obj/../generic/
@@ -50,6 +51,5 @@ TARGET_HEXS=$(addsuffix .hex, $(TARGETS))
 TARGET_MIFS=$(addsuffix .mif, $(TARGETS))
 TARGET_MEMS=$(addsuffix .mem, $(TARGETS))
 clean:
-	rm -rf obj $(TARGET_ELFS) $(TARGET_OBJ_DUMPS) $(TARGET_BINS) $(TARGET_HEXS) $(TARGET_HEXS) $(TARGET_MEMS)
-
--include $(wildcard obj/*.d)
+	rm -rf obj generic $(TARGET_ELFS) $(TARGET_OBJ_DUMPS) $(TARGET_BINS) $(TARGET_HEXS) $(TARGET_HEXS) $(TARGET_MEMS)
+    -include $(wildcard obj/*.d)

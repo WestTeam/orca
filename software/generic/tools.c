@@ -8,7 +8,7 @@
 
 volatile uint32_t* uart_jtag = (volatile uint32_t*)(0x01000400);
 
-volatile uint32_t* uart_rs232 = (volatile uint32_t*)(0x01000420);
+volatile uint32_t* uart_rs232 = (volatile uint32_t*)(0x01000440);
 
 
 inline uint32_t get_time()
@@ -61,6 +61,7 @@ void uart_rs232_configure(uint16_t divisor)
 
 }
 
+#define UART_RS232_REG_RX_DATA 0
 #define UART_RS232_REG_TX_DATA 1
 #define UART_RS232_REG_STATUS 2
 
@@ -82,6 +83,102 @@ void uart_rs232_tx(uint8_t data)
     } while (1);
 
 }
+
+#define ALTERA_AVALON_UART_CONTROL_RRDY_MSK           (0x80)
+#define ALTERA_AVALON_UART_CONTROL_RRDY_OFST          (7)
+
+uint8_t uart_rs232_rx(uint8_t *data, uint32_t timeout)
+{
+    uint32_t status;
+
+    do {
+        status = uart_rs232[UART_RS232_REG_STATUS];
+   
+        if (status & ALTERA_AVALON_UART_CONTROL_RRDY_MSK)
+        {
+            uint8_t dummy;
+            if (data != NULL)
+                *data = (uint8_t)uart_rs232[UART_RS232_REG_RX_DATA];
+            else
+                dummy = (uint8_t)uart_rs232[UART_RS232_REG_RX_DATA];
+            return 0;
+        }
+    } while (timeout-- > 0);
+
+    return 1;
+}
+
+
+void uart_rs232_tx_frame(uint8_t *data, uint32_t len)
+{
+    uint32_t i;
+
+    for (i=0;i<len;i++)
+    {
+        uart_rs232_tx(data[i]);
+    }
+
+}
+
+uint32_t uart_rs232_rx_frame(uint8_t *data, uint32_t timeout_sof, uint32_t timeout_eof)
+{
+    uint32_t len = 0;
+    uint8_t error;
+
+    error = uart_rs232_rx(&data[len],timeout_sof);
+
+    if (error)
+        return 0;
+
+    do {
+        len++;
+        error = uart_rs232_rx(&data[len],timeout_eof);
+    } while (error == 0);
+
+    return len;
+}
+
+/*
+
+
+
+int 
+altera_avalon_uart_read(altera_avalon_uart_state* sp, char* ptr, int len,
+  int flags)
+{
+  int block;
+  unsigned int status;
+
+  block = !(flags & O_NONBLOCK);
+
+  do
+  {
+    status = IORD_ALTERA_AVALON_UART_STATUS(sp->base);
+
+    // clear any error flags
+
+    IOWR_ALTERA_AVALON_UART_STATUS(sp->base, 0);
+
+    if (status & ALTERA_AVALON_UART_CONTROL_RRDY_MSK)
+    {
+      ptr[0] = IORD_ALTERA_AVALON_UART_RXDATA(sp->base);
+
+      if (!(status & (ALTERA_AVALON_UART_STATUS_PE_MSK | 
+      ALTERA_AVALON_UART_STATUS_FE_MSK)))
+      {
+        return 1;
+      }
+    }
+  }
+  while (block);
+
+  ALT_ERRNO = EWOULDBLOCK;
+ 
+  return 0;
+}
+*/
+
+
 
 void uart_rs232_buffer_init(uart_tx_state* state, uint8_t* buffer, uint16_t buffer_size)
 {
@@ -139,7 +236,7 @@ void ts_stop(uint32_t *ts)
     *ts = get_time()-*ts;
 }
 
-#define CPU_CLK_PERIOD_NS 20
+
 
 uint32_t ts_freq_to_cycles(uint16_t freq_hz)
 {
@@ -167,7 +264,15 @@ uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period)
         return 0;
 }
 
+void ts_wait_until_elapsed(uint32_t ts_start, uint32_t period)
+{
+    uint32_t elapsed = get_time()-ts_start;
+    uint32_t wait_cycles = 0;
+    if (elapsed < period)
+        wait_cycles = period-elapsed;
 
+    delay(wait_cycles);
+}
 
 /*
 *

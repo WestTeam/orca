@@ -17,8 +17,9 @@ char jtaguart_getchar();
 
 void uart_rs232_configure(uint16_t divisor);
 void uart_rs232_tx(uint8_t data);
-
-
+uint8_t uart_rs232_rx(uint8_t *data, uint32_t timeout);
+void uart_rs232_tx_frame(uint8_t *data, uint32_t len);
+uint32_t uart_rs232_rx_frame(uint8_t *data, uint32_t timeout_sof, uint32_t timeout_eof);
 
 typedef struct {
     uint8_t*    buffer;
@@ -45,13 +46,15 @@ typedef struct {
 uint16_t protocolCrc(uint8_t *msg, uint16_t size);
 
 
+#define CPU_CLK_PERIOD_NS 20
+#define MS_TO_CYCLES(x) (x*1000*1000/CPU_CLK_PERIOD_NS)
 
 void ts_start(uint32_t *ts);
 void ts_stop(uint32_t *ts);
 uint32_t ts_freq_to_cycles(uint16_t freq_hz);
 uint16_t ts_cycles_to_freq(uint32_t cycles);
 uint8_t ts_is_elapsed(uint32_t ts_start, uint32_t period);
-
+void ts_wait_until_elapsed(uint32_t ts_start, uint32_t period);
 
 
 
